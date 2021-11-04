@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace DatasetRefactor.UI
 {
@@ -28,13 +28,15 @@ namespace DatasetRefactor.UI
 
         static string Serialize(object metadata)
         {
-            var options = new JsonSerializerOptions
+            var settings = new JsonSerializerSettings
             {
-                WriteIndented = true,
+                Formatting = Formatting.Indented,
+                NullValueHandling = NullValueHandling.Ignore,
+                DefaultValueHandling = DefaultValueHandling.Ignore,
+                Converters = new[] { new StringEnumConverter() }
             };
 
-            options.Converters.Add(new JsonStringEnumConverter());
-            return JsonSerializer.Serialize(metadata, options);
+            return JsonConvert.SerializeObject(metadata, settings);
         }
 
         private static Dictionary<string, string> ParseArgs(string[] args)
