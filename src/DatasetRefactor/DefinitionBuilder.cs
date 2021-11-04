@@ -12,6 +12,9 @@ namespace DatasetRefactor
     public class DefinitionBuilder
     {
         const string TableAdapterBaseType = "System.ComponentModel.Component";
+        const string RootNamespace = "RootNamespace";
+        const string DatasetName = "DatasetName";
+        const string TableName = "TableName";
 
         private readonly string assemblyPath;
 
@@ -24,7 +27,7 @@ namespace DatasetRefactor
         {
 
             var assembly = Assembly.LoadFrom(this.assemblyPath);
-            var types = assembly.FindTypes(TableAdapterBaseType);
+            var types = assembly.FindTypes(TableAdapterBaseType, "TableAdapterManager");
 
             var result = new List<TableMetadata>();
 
@@ -53,14 +56,14 @@ namespace DatasetRefactor
                 actions.Add(action);
             }
 
-            var match = Regex.Match(type.Namespace, @"(?<RootNamespace>.*)\.(?<DatasetName>\w*)TableAdapters$");
+            var header = ParseHeader(type);
 
             return new TableMetadata
             {
-                Name = type.Name,
-                LocalNamespace = type.Namespace,
-                RootNamespace = match.Groups["RootNamespace"].Value,
-                DatasetName = match.Groups["DatasetName"].Value,
+                RootNamespace = header[RootNamespace],
+                DatasetName = header[DatasetName],
+                TableName = header[TableName],
+                AdapterNamespace = type.Namespace,
                 AdapterActions = actions,
             };
         }
@@ -114,6 +117,26 @@ namespace DatasetRefactor
             }
 
             return (TableActionType.Scalar, string.Empty);
+        }
+
+        private static Dictionary<string, string> ParseHeader(Type type)
+        {
+            var pattern = new[]
+            {
+                @"(?<",
+                RootNamespace,
+                @">.*)\.(?<",
+                DatasetName,
+                @">\w*)TableAdapters\.(?<",
+                TableName,
+                @">\w*)TableAdapter$",
+            };
+
+            var keys = new[] { RootNamespace, DatasetName, TableName };
+
+            var match = Regex.Match(type.FullName, string.Join(string.Empty, pattern));
+
+            return keys.ToDictionary(k => k, v => match.Groups[v].Value);
         }
     }
 }

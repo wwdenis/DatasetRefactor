@@ -9,11 +9,12 @@ namespace DatasetRefactor.Extensions
 {
     internal static class ReflectionExtensions
     {
-        public static IEnumerable<Type> FindTypes(this Assembly assembly, params string[] baseTypes)
+        public static IEnumerable<Type> FindTypes(this Assembly assembly, string baseType, string excludeName = null)
         {
-            return assembly
-                .ExportedTypes
-                .Where(i => baseTypes.Contains(i.BaseType.FullName));
+            return from i in assembly.ExportedTypes
+                where baseType == i.BaseType.FullName
+                && (string.IsNullOrEmpty(excludeName) | excludeName != i.Name)
+                select i;
         }
 
         public static IEnumerable<MethodInfo> GetDeclaredMethods(this Type type)

@@ -10,11 +10,11 @@ namespace DatasetRefactor.Models
             this.AdapterActions = Enumerable.Empty<TableAction>();
         }
 
-        public string Name { get; set; }
+        public string TableName { get; set; }
 
         public string DatasetName { get; set; }
 
-        public string LocalNamespace { get; set; }
+        public string AdapterNamespace { get; set; }
 
         public string RootNamespace { get; set; }
 
