@@ -8,6 +8,7 @@ namespace DatasetRefactor.Models
         public TableMetadata()
         {
             this.AdapterActions = Enumerable.Empty<TableAction>();
+            this.SqlCommands = Enumerable.Empty<TableCommand>();
         }
 
         public string TableName { get; set; }
@@ -19,5 +20,7 @@ namespace DatasetRefactor.Models
         public string RootNamespace { get; set; }
 
         public IEnumerable<TableAction> AdapterActions { get; set; }
+        
+        public IEnumerable<TableCommand> SqlCommands { get; internal set; }
     }
 }
