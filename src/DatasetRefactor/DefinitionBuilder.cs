@@ -24,12 +24,12 @@ namespace DatasetRefactor
             this.assemblyPath = assemblyPath;
         }
 
-        public IEnumerable<TableMetadata> Build(string tableName = null)
+        public IEnumerable<TableGroup> Build(string tableName = null)
         {
             var assembly = Assembly.LoadFrom(this.assemblyPath);
             var types = assembly.FindTypes(TableAdapterBaseType, "TableAdapterManager");
 
-            var result = new List<TableMetadata>();
+            var result = new List<TableGroup>();
 
             if (!string.IsNullOrWhiteSpace(tableName))
             {
@@ -38,20 +38,56 @@ namespace DatasetRefactor
 
             foreach (var type in types)
             {
-                var adapter = BuildAdapter(type);
-                result.Add(adapter);
+                var item = BuildGroup(type);
+                result.Add(item);
             }
 
             return result;
         }
 
-        private static TableMetadata BuildAdapter(Type type)
+        private static TableGroup BuildGroup(Type type)
+        {
+            var dataset = BuildDataset(type);
+            var table = BuildTable(type);
+            var adapter = BuildAdapter(type);
+
+            return new TableGroup
+            {
+                Dataset = dataset,
+                Table = table,
+                Adapter = adapter,
+            };
+        }
+
+        private static DatasetInfo BuildDataset(Type type)
+        {
+            var header = ParseHeader(type);
+
+            return new DatasetInfo
+            {
+                Name = header[DatasetName],
+                Namespace = header[RootNamespace],
+            };
+        }
+
+        private static TableInfo BuildTable(Type type)
+        {
+            var header = ParseHeader(type);
+
+            return new TableInfo
+            {
+                Name = header[TableName],
+                Namespace = header[RootNamespace] + "." + header[DatasetName],
+            };
+        }
+
+        private static AdapterInfo BuildAdapter(Type type)
         {
             var adapter = InitAdapter(type);
             var methods = type.GetDeclaredMethods();
             
-            var actions = new List<TableAction>();
-            var commands = new HashSet<TableCommand>();
+            var actions = new List<ActionInfo>();
+            var commands = new HashSet<CommandInfo>();
 
             foreach (var method in methods)
             {
@@ -63,22 +99,18 @@ namespace DatasetRefactor
                 commands.Add(command);
             }
 
-            var header = ParseHeader(type);
-
-            return new TableMetadata
+            return new AdapterInfo
             {
-                RootNamespace = header[RootNamespace],
-                DatasetName = header[DatasetName],
-                TableName = header[TableName],
-                AdapterNamespace = type.Namespace,
-                AdapterActions = actions,
-                SqlCommands = commands,
+                Name = type.Name,
+                Namespace = type.Namespace,
+                Actions = actions,
+                Commands = commands,
             };
         }
 
-        private static TableAction ParseAction(MethodInfo method)
+        private static ActionInfo ParseAction(MethodInfo method)
         {
-            var parameters = new List<TableActionParameter>();
+            var parameters = new List<Models.ParameterInfo>();
 
             foreach (var parameter in method.GetParameters())
             {
@@ -88,7 +120,7 @@ namespace DatasetRefactor
 
             var (type, suffix) = ParseActionType(method);
 
-            return new TableAction
+            return new ActionInfo
             {
                 Name = method.Name,
                 Type = type,
@@ -97,30 +129,30 @@ namespace DatasetRefactor
             };
         }
 
-        private static TableActionParameter ParseParameter(ParameterInfo parameter)
+        private static Models.ParameterInfo ParseParameter(System.Reflection.ParameterInfo parameter)
         {
-            return new TableActionParameter
+            return new Models.ParameterInfo
             {
                 Name = parameter.Name,
                 Type = parameter.ParameterType.GetFriendlyName(),
             };
         }
 
-        private static TableCommand ParseCommand(TableAction action, object instance)
+        private static CommandInfo ParseCommand(ActionInfo action, object instance)
         {
             var sqlAdapter = instance.GetPropertyValue<SqlDataAdapter>("Adapter");
 
             var command = action.Type switch
             {
-                TableActionType.Fill => sqlAdapter.SelectCommand,
-                TableActionType.GetData => sqlAdapter.SelectCommand,
-                TableActionType.Insert => sqlAdapter.InsertCommand,
-                TableActionType.Delete => sqlAdapter.DeleteCommand,
-                TableActionType.Update => sqlAdapter.UpdateCommand,
+                ActionType.Fill => sqlAdapter.SelectCommand,
+                ActionType.GetData => sqlAdapter.SelectCommand,
+                ActionType.Insert => sqlAdapter.InsertCommand,
+                ActionType.Delete => sqlAdapter.DeleteCommand,
+                ActionType.Update => sqlAdapter.UpdateCommand,
                 _ => null,
             };
 
-            return new TableCommand
+            return new CommandInfo
             {
                 Type = action.Type,
                 Name = action.Suffix,
@@ -128,14 +160,14 @@ namespace DatasetRefactor
             };
         }
 
-        private static (TableActionType, string) ParseActionType(MethodInfo method)
+        private static (ActionType, string) ParseActionType(MethodInfo method)
         {
-            if (Enum.TryParse<TableActionType>(method.Name, out var actionType))
+            if (Enum.TryParse<ActionType>(method.Name, out var actionType))
             {
                 return (actionType, string.Empty);
             }
 
-            var selectTypes = new[] { TableActionType.Fill, TableActionType.GetData };
+            var selectTypes = new[] { ActionType.Fill, ActionType.GetData };
 
             foreach (var selectType in selectTypes)
             {
@@ -146,7 +178,7 @@ namespace DatasetRefactor
                 }
             }
 
-            return (TableActionType.Scalar, string.Empty);
+            return (ActionType.Scalar, string.Empty);
         }
 
         private static Dictionary<string, string> ParseHeader(Type type)

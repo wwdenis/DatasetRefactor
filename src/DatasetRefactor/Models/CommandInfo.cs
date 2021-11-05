@@ -2,9 +2,9 @@
 
 namespace DatasetRefactor.Models
 {
-    public class TableCommand : IEquatable<TableCommand>
+    public class CommandInfo : IEquatable<CommandInfo>
     {
-        public TableActionType Type { get; set; }
+        public ActionType Type { get; set; }
 
         public string Name { get; set; }
 
@@ -12,9 +12,9 @@ namespace DatasetRefactor.Models
 
         public override int GetHashCode() => (Type, Name, Text).GetHashCode();
 
-        public override bool Equals(object obj) => Equals(obj as TableCommand);
+        public override bool Equals(object obj) => Equals(obj as CommandInfo);
         
-        public bool Equals(TableCommand other)
+        public bool Equals(CommandInfo other)
         {
             return other is not null
                 && this.GetHashCode() == other.GetHashCode();

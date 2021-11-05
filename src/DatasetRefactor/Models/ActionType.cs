@@ -1,6 +1,6 @@
 ﻿namespace DatasetRefactor.Models
 {
-    public enum TableActionType
+    public enum ActionType
     {
         None,
         Fill,
