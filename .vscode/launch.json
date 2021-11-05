@@ -8,7 +8,7 @@
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/src/DatasetRefactor.UI/bin/Debug/net472/DatasetRefactor.UI.exe",
             "args": [
-                "-table=TABLE_NAME_FILTER",
+                "-dataset=DATASET_NAME_FILTER",
                 "-source=PATH_TO_DATASET_DLL"
             ],
             "cwd": "${workspaceFolder}/src/DatasetRefactor.UI",

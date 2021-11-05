@@ -4,7 +4,6 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using DatasetRefactor.Extensions;
 using DatasetRefactor.Models;
 
@@ -12,10 +11,9 @@ namespace DatasetRefactor
 {
     public class DefinitionBuilder
     {
-        const string TableAdapterBaseType = "System.ComponentModel.Component";
-        const string RootNamespace = "RootNamespace";
-        const string DatasetName = "DatasetName";
-        const string TableName = "TableName";
+        const string DatasetBaseType = "System.Data.DataSet";
+        const string TableBaseType = "System.Data.TypedTableBase";
+        const string AdapterBaseType = "System.ComponentModel.Component";
 
         private readonly string assemblyPath;
 
@@ -24,60 +22,59 @@ namespace DatasetRefactor
             this.assemblyPath = assemblyPath;
         }
 
-        public IEnumerable<TableGroup> Build(string tableName = null)
+        public IEnumerable<TableGroup> Build(string datasetName = null)
         {
             var assembly = Assembly.LoadFrom(this.assemblyPath);
-            var types = assembly.FindTypes(TableAdapterBaseType, "TableAdapterManager");
+            var datasets = assembly.FindTypes(DatasetBaseType);
 
             var result = new List<TableGroup>();
 
-            if (!string.IsNullOrWhiteSpace(tableName))
+            if (!string.IsNullOrWhiteSpace(datasetName))
             {
-                types = types.Where(i => i.Name.StartsWith(tableName));
+                datasets = datasets.Where(i => datasetName.Equals(i.Name));
             }
 
-            foreach (var type in types)
+            foreach (var dataset in datasets)
             {
-                var item = BuildGroup(type);
-                result.Add(item);
+                var datasetInfo = BuildDataset(dataset);
+                var tables = dataset.GetNestedTypes().Where(i => i.BaseType.FullName.StartsWith(TableBaseType));
+
+                foreach (var table in tables)
+                {
+                    var adapter = assembly.FindTypes(AdapterBaseType).FirstOrDefault(i => i.Name.Equals(table.Name.Replace("DataTable", "TableAdapter")));
+
+                    var tableInfo = BuildTable(table);
+                    var adapterInfo = BuildAdapter(adapter);
+
+                    var tableGroup = new TableGroup
+                    {
+                        Dataset = datasetInfo,
+                        Table = tableInfo,
+                        Adapter = adapterInfo,
+                    };
+                    
+                    result.Add(tableGroup);
+                }
             }
 
             return result;
         }
 
-        private static TableGroup BuildGroup(Type type)
-        {
-            var dataset = BuildDataset(type);
-            var table = BuildTable(type);
-            var adapter = BuildAdapter(type);
-
-            return new TableGroup
-            {
-                Dataset = dataset,
-                Table = table,
-                Adapter = adapter,
-            };
-        }
-
         private static DatasetInfo BuildDataset(Type type)
         {
-            var header = ParseHeader(type);
-
             return new DatasetInfo
             {
-                Name = header[DatasetName],
-                Namespace = header[RootNamespace],
+                Name = type.Name,
+                Namespace = type.Namespace,
             };
         }
 
         private static TableInfo BuildTable(Type type)
         {
-            var header = ParseHeader(type);
-
             return new TableInfo
             {
-                Name = header[TableName],
-                Namespace = header[RootNamespace] + "." + header[DatasetName],
+                Name = type.Name,
+                Namespace = type.Namespace,
             };
         }
 
@@ -179,26 +176,6 @@ namespace DatasetRefactor
             }
 
             return (ActionType.Scalar, string.Empty);
-        }
-
-        private static Dictionary<string, string> ParseHeader(Type type)
-        {
-            var pattern = new[]
-            {
-                @"(?<",
-                RootNamespace,
-                @">.*)\.(?<",
-                DatasetName,
-                @">\w*)TableAdapters\.(?<",
-                TableName,
-                @">\w*)TableAdapter$",
-            };
-
-            var keys = new[] { RootNamespace, DatasetName, TableName };
-
-            var match = Regex.Match(type.FullName, string.Join(string.Empty, pattern));
-
-            return keys.ToDictionary(k => k, v => match.Groups[v].Value);
         }
 
         private static object InitAdapter(Type type)

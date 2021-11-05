@@ -10,16 +10,16 @@ namespace DatasetRefactor.UI
     class Program
     {
         const string SourceAssembly = "source";
-        const string TableName = "table";
+        const string DatasetName = "dataset";
 
         static void Main(string[] args)
         {
             var namedArgs = ParseArgs(args);
             var assemblyFile = namedArgs[SourceAssembly];
-            var tableName = namedArgs[TableName];
+            var datasetName = namedArgs[DatasetName];
 
             var builder = new DefinitionBuilder(assemblyFile);
-            var metadata = builder.Build(tableName);
+            var metadata = builder.Build(datasetName);
             var json = Serialize(metadata);
 
             Console.WriteLine(json);
@@ -52,9 +52,9 @@ namespace DatasetRefactor.UI
                 throw new Exception($"SourceAssembly {assemblyFile} does not exist");
             }
             
-            if (!parameters.TryGetValue(TableName, out var tableName))
+            if (!parameters.TryGetValue(DatasetName, out var datasetName))
             {
-                parameters.Add(TableName, string.Empty);
+                parameters.Add(DatasetName, string.Empty);
             }
 
             return parameters;
