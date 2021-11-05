@@ -6,8 +6,10 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/src/DatasetRefactor.UI/bin/Debug/net5.0/DatasetRefactor.UI.dll",
+            "program": "${workspaceFolder}/src/DatasetRefactor.UI/bin/Debug/net472/DatasetRefactor.UI.exe",
             "args": [
+                "-table=TABLE_NAME_FILTER",
+                "-source=PATH_TO_DATASET_DLL"
             ],
             "cwd": "${workspaceFolder}/src/DatasetRefactor.UI",
             "console": "internalConsole",
