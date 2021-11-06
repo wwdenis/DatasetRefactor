@@ -15,18 +15,17 @@ namespace DatasetRefactor
         const string TableBaseType = "System.Data.TypedTableBase`1";
         const string AdapterBaseType = "System.ComponentModel.Component";
 
-        private readonly string assemblyPath;
+        private readonly Assembly assembly;
 
-        public DefinitionBuilder(string assemblyPath)
+        public DefinitionBuilder(Assembly assembly)
         {
-            this.assemblyPath = assemblyPath;
+            this.assembly = assembly;
         }
 
         public IEnumerable<TableGroup> Build(string datasetName = null)
         {
-            var assembly = Assembly.LoadFrom(this.assemblyPath);
-            var datasets = assembly.FindTypes(DatasetBaseType);
-            var adapters = assembly.FindTypes(AdapterBaseType);
+            var datasets = this.assembly.FindTypes(DatasetBaseType);
+            var adapters = this.assembly.FindTypes(AdapterBaseType);
 
             var result = new List<TableGroup>();
 

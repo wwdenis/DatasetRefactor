@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
@@ -18,12 +19,12 @@ namespace DatasetRefactor.UI
             var assemblyFile = namedArgs[SourceAssembly];
             var datasetName = namedArgs[DatasetName];
 
-            var builder = new DefinitionBuilder(assemblyFile);
+            var assembly = Assembly.LoadFrom(assemblyFile);
+            var builder = new DefinitionBuilder(assembly);
             var metadata = builder.Build(datasetName);
             var json = Serialize(metadata);
 
             Console.WriteLine(json);
-            Console.WriteLine("DONE");
         }
 
         static string Serialize(object metadata)
