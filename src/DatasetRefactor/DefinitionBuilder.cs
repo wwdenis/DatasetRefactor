@@ -35,18 +35,18 @@ namespace DatasetRefactor
                 datasets = datasets.Where(i => datasetName.Equals(i.Name));
             }
 
-            foreach (var dataset in datasets)
+            foreach (var datasetType in datasets)
             {
-                var datasetInfo = BuildDataset(dataset);
-                var tables = dataset.FindTypes(TableBaseType);
+                var datasetInfo = BuildDataset(datasetType);
+                var tables = datasetType.FindTypes(TableBaseType);
 
-                foreach (var table in tables)
+                foreach (var tableType in tables)
                 {
-                    var adapterName = table.Name.Replace("DataTable", "TableAdapter");
-                    var adapter = adapters.FirstOrDefault(i => i.Name.Equals(adapterName));
+                    var tableInfo = BuildTable(tableType);
 
-                    var tableInfo = BuildTable(table);
-                    var adapterInfo = BuildAdapter(adapter);
+                    var adapterName = $"{tableInfo.Name}TableAdapter";
+                    var adapterType = adapters.Single(i => i.Name.Equals(adapterName));
+                    var adapterInfo = BuildAdapter(adapterType);
 
                     var tableGroup = new TableGroup
                     {
@@ -73,12 +73,47 @@ namespace DatasetRefactor
 
         private static TableInfo BuildTable(Type type)
         {
+            var tableName = type.Name.Replace("DataTable", string.Empty);
             var datasetNamespace = type.FullName.Split('+').First();
+            var columns = BuildColumns(type);
+
+            if (!columns.Any())
+            {
+                return null;
+            }
+
             return new TableInfo
             {
-                Name = type.Name,
+                Name = tableName,
                 Namespace = datasetNamespace,
+                Columns = columns,
             };
+        }
+
+        private static IEnumerable<ColumnInfo> BuildColumns(Type tableType)
+        {
+            var instance = Activator.CreateInstance(tableType);
+            var sourceColumns = instance.GetPropertyValue<DataColumnCollection>("Columns");
+            var keyColumns = instance.GetPropertyValue<DataColumn[]>("PrimaryKey");
+
+            var columns = new List<ColumnInfo>();
+
+            foreach (DataColumn col in sourceColumns)
+            {
+                var propertyName = col.ColumnName.Contains(" ") ? col.ColumnName.Replace(" ", "_") : string.Empty;
+
+                var column = new ColumnInfo
+                {
+                    Name = col.ColumnName,
+                    Type = col.DataType.GetFriendlyName(),
+                    Property = propertyName,
+                    IsKey = keyColumns.Contains(col),
+                };
+
+                columns.Add(column);
+            }
+
+            return columns;
         }
 
         private static AdapterInfo BuildAdapter(Type type)
