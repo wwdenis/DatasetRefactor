@@ -4,7 +4,7 @@
         {
             "label": "build",
             "command": "dotnet",
-            "type": "shell",
+            "type": "process",
             "args": [
                 "build",
                 "/property:GenerateFullPaths=true",
