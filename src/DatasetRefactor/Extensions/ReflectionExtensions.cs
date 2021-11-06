@@ -9,11 +9,23 @@ namespace DatasetRefactor.Extensions
 {
     internal static class ReflectionExtensions
     {
-        public static IEnumerable<Type> FindTypes(this Assembly assembly, string baseType, string excludeName = null)
+        public static IEnumerable<Type> FindTypes(this Assembly assembly, string baseType)
         {
-            return from i in assembly.ExportedTypes
-                where baseType == i.BaseType.FullName
-                && (string.IsNullOrEmpty(excludeName) | excludeName != i.Name)
+            return assembly.ExportedTypes.FindTypes(baseType);
+        }
+
+        public static IEnumerable<Type> FindTypes(this Type type, string baseType)
+        {
+            return type.GetNestedTypes().FindTypes(baseType);
+        }
+
+        public static IEnumerable<Type> FindTypes(this IEnumerable<Type> types, string baseName, string typeName = null)
+        {
+            return from i in types
+                let genericBase = i.BaseType.IsGenericType ? i.BaseType.GetGenericTypeDefinition() : null
+                let baseType = genericBase ?? i.BaseType
+                where baseType.FullName == baseName
+                && i.Name == (typeName ?? i.Name)
                 select i;
         }
 

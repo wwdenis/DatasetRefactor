@@ -12,7 +12,7 @@ namespace DatasetRefactor
     public class DefinitionBuilder
     {
         const string DatasetBaseType = "System.Data.DataSet";
-        const string TableBaseType = "System.Data.TypedTableBase";
+        const string TableBaseType = "System.Data.TypedTableBase`1";
         const string AdapterBaseType = "System.ComponentModel.Component";
 
         private readonly string assemblyPath;
@@ -26,6 +26,7 @@ namespace DatasetRefactor
         {
             var assembly = Assembly.LoadFrom(this.assemblyPath);
             var datasets = assembly.FindTypes(DatasetBaseType);
+            var adapters = assembly.FindTypes(AdapterBaseType);
 
             var result = new List<TableGroup>();
 
@@ -37,11 +38,12 @@ namespace DatasetRefactor
             foreach (var dataset in datasets)
             {
                 var datasetInfo = BuildDataset(dataset);
-                var tables = dataset.GetNestedTypes().Where(i => i.BaseType.FullName.StartsWith(TableBaseType));
+                var tables = dataset.FindTypes(TableBaseType);
 
                 foreach (var table in tables)
                 {
-                    var adapter = assembly.FindTypes(AdapterBaseType).FirstOrDefault(i => i.Name.Equals(table.Name.Replace("DataTable", "TableAdapter")));
+                    var adapterName = table.Name.Replace("DataTable", "TableAdapter");
+                    var adapter = adapters.FirstOrDefault(i => i.Name.Equals(adapterName));
 
                     var tableInfo = BuildTable(table);
                     var adapterInfo = BuildAdapter(adapter);
@@ -71,10 +73,11 @@ namespace DatasetRefactor
 
         private static TableInfo BuildTable(Type type)
         {
+            var datasetNamespace = type.FullName.Split('+').First();
             return new TableInfo
             {
                 Name = type.Name,
-                Namespace = type.Namespace,
+                Namespace = datasetNamespace,
             };
         }
 
