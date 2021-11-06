@@ -20,8 +20,8 @@ namespace DatasetRefactor.UI
             var datasetName = namedArgs[DatasetName];
 
             var assembly = Assembly.LoadFrom(assemblyFile);
-            var builder = new DefinitionBuilder(assembly);
-            var metadata = builder.Build(datasetName);
+            var scanner = new DatasetScanner(assembly);
+            var metadata = scanner.Scan(datasetName);
             var json = Serialize(metadata);
 
             Console.WriteLine(json);

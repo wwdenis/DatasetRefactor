@@ -9,7 +9,7 @@ using DatasetRefactor.Models;
 
 namespace DatasetRefactor
 {
-    public class DefinitionBuilder
+    public class DatasetScanner
     {
         const string DatasetBaseType = "System.Data.DataSet";
         const string TableBaseType = "System.Data.TypedTableBase`1";
@@ -17,12 +17,12 @@ namespace DatasetRefactor
 
         private readonly Assembly assembly;
 
-        public DefinitionBuilder(Assembly assembly)
+        public DatasetScanner(Assembly assembly)
         {
             this.assembly = assembly;
         }
 
-        public IEnumerable<TableGroup> Build(string datasetName = null)
+        public IEnumerable<TableGroup> Scan(string datasetName = null)
         {
             var datasets = this.assembly.FindTypes(DatasetBaseType);
             var adapters = this.assembly.FindTypes(AdapterBaseType);
