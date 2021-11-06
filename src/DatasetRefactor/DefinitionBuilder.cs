@@ -167,8 +167,7 @@ namespace DatasetRefactor
 
             foreach (var prefix in selectPrefixes)
             {
-                var suffix = method.Name.GetSuffix(prefix);
-                if (method.Name.StartsWith(prefix) || !string.IsNullOrWhiteSpace(suffix))
+                if (method.Name.HasSuffix(prefix, out var suffix))
                 {
                     return (ActionType.Select, suffix);
                 }

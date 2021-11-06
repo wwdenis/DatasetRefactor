@@ -4,18 +4,19 @@ namespace DatasetRefactor.Extensions
 {
     internal static class StringExtensions
     {
-        public static string GetSuffix(this string text, string preffix)
+        public static bool HasSuffix(this string text, string preffix, out string suffix)
         {
             if (!string.IsNullOrEmpty(text) && !string.IsNullOrEmpty(preffix))
             {
-                var pos = preffix.IndexOf(text, StringComparison.Ordinal);
-                if (pos == 0)
+                if (text.StartsWith(preffix, StringComparison.Ordinal))
                 {
-                    return text.Substring(preffix.Length);
+                    suffix = text.Substring(preffix.Length);
+                    return true;
                 }
             }
 
-            return string.Empty;
+            suffix = null;
+            return false;
         }
     }
 }
