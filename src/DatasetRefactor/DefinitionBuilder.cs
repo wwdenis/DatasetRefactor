@@ -141,8 +141,7 @@ namespace DatasetRefactor
 
             var command = action.Type switch
             {
-                ActionType.Fill => sqlAdapter.SelectCommand,
-                ActionType.GetData => sqlAdapter.SelectCommand,
+                ActionType.Select => sqlAdapter.SelectCommand,
                 ActionType.Insert => sqlAdapter.InsertCommand,
                 ActionType.Delete => sqlAdapter.DeleteCommand,
                 ActionType.Update => sqlAdapter.UpdateCommand,
@@ -164,14 +163,14 @@ namespace DatasetRefactor
                 return (actionType, string.Empty);
             }
 
-            var selectTypes = new[] { ActionType.Fill, ActionType.GetData };
+            var selectPrefixes = new[] { "Fill", "GetData" };
 
-            foreach (var selectType in selectTypes)
+            foreach (var prefix in selectPrefixes)
             {
-                var suffix = method.Name.GetSuffix(selectType.ToString());
-                if (!string.IsNullOrWhiteSpace(suffix))
+                var suffix = method.Name.GetSuffix(prefix);
+                if (method.Name.StartsWith(prefix) || !string.IsNullOrWhiteSpace(suffix))
                 {
-                    return (selectType, suffix);
+                    return (ActionType.Select, suffix);
                 }
             }
 

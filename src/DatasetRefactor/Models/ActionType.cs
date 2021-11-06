@@ -3,8 +3,7 @@
     public enum ActionType
     {
         None,
-        Fill,
-        GetData,
+        Select,
         Insert,
         Update,
         Delete,
