@@ -8,7 +8,7 @@ namespace DatasetRefactor.Models
         public ActionInfo()
         {
             this.Type = ActionType.None;
-            this.Parameters = Enumerable.Empty<ParameterInfo>();
+            this.Parameters = Enumerable.Empty<ActionParameter>();
         }
 
         public string Name { get; set; }
@@ -17,6 +17,6 @@ namespace DatasetRefactor.Models
 
         public string Suffix { get; internal set; }
 
-        public IEnumerable<ParameterInfo> Parameters { get; set; }
+        public IEnumerable<ActionParameter> Parameters { get; set; }
     }
 }

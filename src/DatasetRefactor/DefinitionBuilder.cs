@@ -107,7 +107,7 @@ namespace DatasetRefactor
 
         private static ActionInfo ParseAction(MethodInfo method)
         {
-            var parameters = new List<Models.ParameterInfo>();
+            var parameters = new List<ActionParameter>();
 
             foreach (var parameter in method.GetParameters())
             {
@@ -126,9 +126,9 @@ namespace DatasetRefactor
             };
         }
 
-        private static Models.ParameterInfo ParseParameter(System.Reflection.ParameterInfo parameter)
+        private static ActionParameter ParseParameter(ParameterInfo parameter)
         {
-            return new Models.ParameterInfo
+            return new ActionParameter
             {
                 Name = parameter.Name,
                 Type = parameter.ParameterType.GetFriendlyName(),

@@ -1,6 +1,6 @@
 ﻿namespace DatasetRefactor.Models
 {
-    public class ParameterInfo
+    public class ActionParameter
     {
         public string Name { get; set; }
 
