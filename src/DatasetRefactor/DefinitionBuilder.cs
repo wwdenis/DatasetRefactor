@@ -73,20 +73,36 @@ namespace DatasetRefactor
 
         private static TableInfo BuildTable(Type type)
         {
+            var rowName = type.Name.Replace("DataTable", "Row");
             var tableName = type.Name.Replace("DataTable", string.Empty);
             var datasetNamespace = type.FullName.Split('+').First();
-            var columns = BuildColumns(type);
 
+            var actions = new List<ActionInfo>();
+            var methods = type
+                .GetDeclaredMethods()
+                .Where(i => i.ReturnType.Name.Equals(rowName));
+
+            foreach (var method in methods)
+            {
+                var action = ParseAction(method);
+                if (action.Type == ActionType.Find)
+                {
+                    actions.Add(action);
+                }
+            }
+
+            var columns = BuildColumns(type);
             if (!columns.Any())
             {
                 return null;
-            }
+            }            
 
             return new TableInfo
             {
                 Name = tableName,
                 Namespace = datasetNamespace,
                 Columns = columns,
+                Actions = actions,
             };
         }
 
@@ -157,9 +173,10 @@ namespace DatasetRefactor
 
             return new ActionInfo
             {
-                Name = method.Name,
                 Type = type,
+                Name = method.Name,
                 Suffix = suffix,
+                ReturnType = method.ReturnType.GetFriendlyName(),
                 Parameters = parameters,
             };
         }
@@ -201,13 +218,18 @@ namespace DatasetRefactor
                 return (actionType, string.Empty);
             }
 
-            var selectPrefixes = new[] { "Fill", "GetData" };
-
-            foreach (var prefix in selectPrefixes)
+            var prefixMap = new Dictionary<string, ActionType>
             {
-                if (method.Name.HasSuffix(prefix, out var suffix))
+                { "Fill", ActionType.Select },
+                { "GetData", ActionType.Select },
+                { "Find", ActionType.Find },
+            };
+
+            foreach (var prefix in prefixMap)
+            {
+                if (method.Name.HasSuffix(prefix.Key, out var suffix))
                 {
-                    return (ActionType.Select, suffix);
+                    return (prefix.Value, suffix);
                 }
             }
 

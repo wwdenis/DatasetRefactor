@@ -8,12 +8,15 @@ namespace DatasetRefactor.Models
         public TableInfo()
         {
             this.Columns = Enumerable.Empty<ColumnInfo>();
+            this.Actions = Enumerable.Empty<ActionInfo>();
         }
 
         public string Name { get; set; }
 
         public string Namespace { get; set; }
 
-        public IEnumerable<ColumnInfo> Columns { get; internal set; }
+        public IEnumerable<ColumnInfo> Columns { get; set; }
+
+        public IEnumerable<ActionInfo> Actions { get; set; }
     }
 }

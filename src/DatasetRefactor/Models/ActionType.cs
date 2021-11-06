@@ -8,5 +8,6 @@
         Update,
         Delete,
         Scalar,
+        Find,
     }
 }

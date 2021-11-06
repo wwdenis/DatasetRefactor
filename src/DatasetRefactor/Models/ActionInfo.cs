@@ -11,11 +11,13 @@ namespace DatasetRefactor.Models
             this.Parameters = Enumerable.Empty<ActionParameter>();
         }
 
-        public string Name { get; set; }
-
         public ActionType Type { get; set; }
 
-        public string Suffix { get; internal set; }
+        public string Name { get; set; }
+
+        public string Suffix { get; set; }
+
+        public string ReturnType { get; set; }
 
         public IEnumerable<ActionParameter> Parameters { get; set; }
     }
