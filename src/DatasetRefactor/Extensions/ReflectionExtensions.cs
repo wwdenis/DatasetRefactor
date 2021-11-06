@@ -31,13 +31,13 @@ namespace DatasetRefactor.Extensions
 
         public static IEnumerable<MethodInfo> GetDeclaredMethods(this Type type)
         {
-            var methods = type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.Public | BindingFlags.DeclaredOnly);
+            var methods = type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
             return from i in methods
                    where !i.IsSpecialName
                    select i;
         }
 
-        public static string GetFriendlyName(this Type type)
+        public static string GetCsName(this Type type)
         {
             var valueType = Nullable.GetUnderlyingType(type);
             var isNullable = valueType != null;

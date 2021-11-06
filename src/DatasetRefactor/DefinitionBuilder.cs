@@ -121,7 +121,7 @@ namespace DatasetRefactor
                 var column = new ColumnInfo
                 {
                     Name = col.ColumnName,
-                    Type = col.DataType.GetFriendlyName(),
+                    Type = col.DataType.GetCsName(),
                     Property = propertyName,
                     IsKey = keyColumns.Contains(col),
                 };
@@ -176,7 +176,7 @@ namespace DatasetRefactor
                 Type = type,
                 Name = method.Name,
                 Suffix = suffix,
-                ReturnType = method.ReturnType.GetFriendlyName(),
+                ReturnType = method.ReturnType.GetCsName(),
                 Parameters = parameters,
             };
         }
@@ -186,7 +186,7 @@ namespace DatasetRefactor
             return new ActionParameter
             {
                 Name = parameter.Name,
-                Type = parameter.ParameterType.GetFriendlyName(),
+                Type = parameter.ParameterType.GetCsName(),
             };
         }
 
