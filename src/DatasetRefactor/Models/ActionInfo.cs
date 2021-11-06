@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace DatasetRefactor.Models
@@ -10,6 +11,8 @@ namespace DatasetRefactor.Models
             this.Type = ActionType.None;
             this.Parameters = Enumerable.Empty<ActionParameter>();
         }
+
+        public string Table { get; set; }
 
         public ActionType Type { get; set; }
 

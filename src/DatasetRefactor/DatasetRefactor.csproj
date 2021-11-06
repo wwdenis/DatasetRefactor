@@ -5,4 +5,12 @@
     <LangVersion>Latest</LangVersion>
   </PropertyGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\**\*.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HashScript" Version="0.0.1" />
+  </ItemGroup>
+
 </Project>

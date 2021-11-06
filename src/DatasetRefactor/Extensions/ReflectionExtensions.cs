@@ -1,5 +1,6 @@
 ﻿using System;
 using System.CodeDom;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -9,29 +10,33 @@ namespace DatasetRefactor.Extensions
 {
     internal static class ReflectionExtensions
     {
-        public static IEnumerable<Type> FindTypes(this Assembly assembly, string baseType)
+        private const BindingFlags DeclaredMembers = BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly;
+
+        private const BindingFlags AllMembers = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
+        public static IEnumerable<Type> FindTypes(this Assembly assembly, string baseType, string typeName = null)
         {
-            return assembly.ExportedTypes.FindTypes(baseType);
+            return assembly.ExportedTypes.FindTypes(baseType, typeName);
         }
 
-        public static IEnumerable<Type> FindTypes(this Type type, string baseType)
+        public static IEnumerable<Type> FindTypes(this Type type, string baseType, string typeName = null)
         {
-            return type.GetNestedTypes().FindTypes(baseType);
+            return type.GetNestedTypes().FindTypes(baseType, typeName);
         }
 
         public static IEnumerable<Type> FindTypes(this IEnumerable<Type> types, string baseName, string typeName = null)
         {
             return from i in types
-                let genericBase = i.BaseType.IsGenericType ? i.BaseType.GetGenericTypeDefinition() : null
-                let baseType = genericBase ?? i.BaseType
-                where baseType.FullName == baseName
-                && i.Name == (typeName ?? i.Name)
-                select i;
+                   let genericBase = i.BaseType.IsGenericType ? i.BaseType.GetGenericTypeDefinition() : null
+                   let baseType = genericBase ?? i.BaseType
+                   where baseType.FullName == baseName
+                   && (string.IsNullOrEmpty(typeName) || i.Name.StartsWith(typeName, StringComparison.Ordinal))
+                   select i;
         }
 
         public static IEnumerable<MethodInfo> GetDeclaredMethods(this Type type)
         {
-            var methods = type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+            var methods = type.GetMethods(DeclaredMembers);
             return from i in methods
                    where !i.IsSpecialName
                    select i;
@@ -84,14 +89,14 @@ namespace DatasetRefactor.Extensions
         public static void InvokeDefault(this object instance, string methodName)
         {
             var type = instance.GetType();
-            var method = type.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            var method = type.GetMethod(methodName, AllMembers);
             instance.InvokeDefault(method);
         }
 
         public static T GetPropertyValue<T>(this object instance, string name)
         {
             var type = instance.GetType();
-            var prop = type.GetProperty(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            var prop = type.GetProperty(name, AllMembers);
             return (T)prop.GetValue(instance);
         }
 
@@ -119,6 +124,72 @@ namespace DatasetRefactor.Extensions
             }
 
             return null;
+        }
+
+        public static bool IsSimple(this Type type)
+        {
+            var nullableType = Nullable.GetUnderlyingType(type);
+            
+            if (nullableType is not null)
+            {
+                return nullableType.IsSimple();
+            }
+
+            var types = new[]
+            { 
+                typeof(string),
+                typeof(decimal),
+                typeof(DateTime),
+                typeof(DateTimeOffset),
+                typeof(TimeSpan),
+                typeof(Guid),
+                typeof(Uri),
+            };
+
+            return type.IsPrimitive
+              || type.IsEnum
+              || types.Contains(type);
+        }
+
+        public static Dictionary<string, object> ToDictionary(this object instance)
+        {
+            var type = instance.GetType();
+            var props = type.GetProperties(DeclaredMembers);
+            var result = new Dictionary<string, object>();
+
+            if (type.IsSimple())
+            {
+                return null;
+            }
+
+            foreach (var prop in props)
+            {
+                var value = prop.GetValue(instance);
+
+                if (!prop.PropertyType.IsSimple())
+                {
+                    if (value is IEnumerable collection)
+                    {
+                        var list = new List<Dictionary<string, object>>();
+                    
+                        foreach (var item in collection)
+                        {
+                            var itemData = item.ToDictionary();
+                            list.Add(itemData);
+                        }
+
+                        value = list;
+                    }
+                    else
+                    {
+                        value = value.ToDictionary();
+                    }
+                }
+
+                result.Add(prop.Name, value);
+            }
+
+            return result;
         }
     }
 }

@@ -1,0 +1,101 @@
+﻿#+Dataset#namespace #Namespace##+#
+{
+    using System;
+    using System.Collections.Generic;
+    using System.Data;
+    using System.Data.SqlClient;
+
+    public class DbAdapter
+    {
+        public DbAdapter()
+        {
+        }
+
+        public DbAdapter(string connectionString)
+        {
+            this.ConnectionString = connectionString;
+        }
+
+        protected string ConnectionString { get; set; }
+
+        protected int Fill(DataTable table, string sql, Dictionary<string, object> parameters = null)
+        {
+            using (var adapter = new SqlDataAdapter(sql, this.ConnectionString))
+            {
+                AddParameters(adapter.SelectCommand, parameters);
+                return adapter.Fill(table);
+            }
+        }
+
+        protected int Update(string sql, DataTable table)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected int Update(string sql, params DataRow[] rows)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected int Execute(string sql, Dictionary<string, object> parameters = null)
+        {
+            var affected = 0;
+
+            using (var connection = CreateConnection())
+            {
+                using (var command = new SqlCommand(sql, connection))
+                {
+                    AddParameters(command, parameters);
+                    connection.Open();
+                    affected = command.ExecuteNonQuery();
+                    connection.Close();
+                }
+            }
+
+            return affected;
+        }
+
+        protected T ExecuteScalar<T>(string sql, Dictionary<string, object> parameters = null)
+        {
+            object result = null;
+
+            using (var connection = CreateConnection())
+            {
+                using (var command = new SqlCommand(sql, connection))
+                {
+                    AddParameters(command, parameters);
+                    connection.Open();
+                    result = command.ExecuteScalar();
+                    connection.Close();
+                }
+            }
+
+            return result is DBNull ? default : (T)result;
+        }
+
+        private void AddParameters(SqlCommand command, Dictionary<string, object> parameters)
+        {
+            if (parameters is null)
+            {
+                return;
+            }
+
+            const string OriginalPrefix = "Original_";
+
+            foreach (var param in parameters)
+            {
+                var parameter = command.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
+                if (param.Key.StartsWith(OriginalPrefix))
+                {
+                    parameter.SourceVersion = DataRowVersion.Original;
+                    parameter.SourceColumn = param.Key.Substring(OriginalPrefix.Length);
+                }
+            }
+        }
+
+        private SqlConnection CreateConnection()
+        {
+            return new SqlConnection(this.ConnectionString);
+        }
+    }
+}

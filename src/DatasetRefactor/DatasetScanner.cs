@@ -22,22 +22,25 @@ namespace DatasetRefactor
             this.assembly = assembly;
         }
 
-        public IEnumerable<TableGroup> Scan(string datasetName = null)
+        public IEnumerable<TableGroup> Scan(string tableName = null)
         {
             var datasets = this.assembly.FindTypes(DatasetBaseType);
             var adapters = this.assembly.FindTypes(AdapterBaseType);
 
             var result = new List<TableGroup>();
 
-            if (!string.IsNullOrWhiteSpace(datasetName))
+            if (!string.IsNullOrWhiteSpace(tableName))
             {
-                datasets = datasets.Where(i => datasetName.Equals(i.Name));
+                datasets = from i in datasets
+                           let tables = i.FindTypes(TableBaseType, tableName)
+                           where tables.Any()
+                           select i;
             }
 
             foreach (var datasetType in datasets)
             {
                 var datasetInfo = BuildDataset(datasetType);
-                var tables = datasetType.FindTypes(TableBaseType);
+                var tables = datasetType.FindTypes(TableBaseType, tableName);
 
                 foreach (var tableType in tables)
                 {
@@ -84,8 +87,9 @@ namespace DatasetRefactor
             foreach (var method in methods)
             {
                 var action = ParseAction(method);
-                if (action.Type == ActionType.Find)
+                if (action?.Type == ActionType.Find)
                 {
+                    action.Table = tableName;
                     actions.Add(action);
                 }
             }
@@ -133,27 +137,36 @@ namespace DatasetRefactor
 
         private static AdapterInfo BuildAdapter(Type type)
         {
+            var tableName = type.Name.Replace("TableAdapter", string.Empty);
             var adapter = InitAdapter(type);
             var methods = type.GetDeclaredMethods();
             
-            var actions = new List<ActionInfo>();
+            var actions = new HashSet<ActionInfo>();
             var commands = new HashSet<CommandInfo>();
 
             foreach (var method in methods)
             {
                 var action = ParseAction(method);
-                actions.Add(action);
 
-                adapter.InvokeDefault(method);
-                var command = ParseCommand(action, adapter);
-                commands.Add(command);
+                if (action is not null)
+                {
+                    action.Table = tableName;
+                    actions.Add(action);
+                    
+                    adapter.InvokeDefault(method);
+                    var command = ParseCommand(action, adapter);
+                    commands.Add(command);
+                }
             }
 
             return new AdapterInfo
             {
                 Name = type.Name,
                 Namespace = type.Namespace,
-                Actions = actions,
+                Select = actions.Where(i => i.Type == ActionType.Select),
+                Insert = actions.FirstOrDefault(i => i.Type == ActionType.Insert),
+                Delete = actions.FirstOrDefault(i => i.Type == ActionType.Delete),
+                Update = actions.FirstOrDefault(i => i.Type == ActionType.Update),
                 Commands = commands,
             };
         }
@@ -164,6 +177,11 @@ namespace DatasetRefactor
 
             foreach (var parameter in method.GetParameters())
             {
+                if (!parameter.ParameterType.IsSimple())
+                {
+                    return null;
+                }
+
                 var actionParameter = ParseParameter(parameter);
                 parameters.Add(actionParameter);
             }
