@@ -12,7 +12,7 @@ namespace DatasetRefactor
     public class DatasetScanner
     {
         const string DatasetBaseType = "System.Data.DataSet";
-        const string TableBaseType = "System.Data.TypedTableBase`1";
+        const string TableBaseType = "System.Data.DataTable";
         const string AdapterBaseType = "System.ComponentModel.Component";
 
         private readonly Assembly assembly;
