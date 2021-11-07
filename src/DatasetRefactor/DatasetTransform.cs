@@ -92,7 +92,7 @@ namespace DatasetRefactor
         {
             var assembly = typeof(DatasetTransform).Assembly;
             var assemblyName = assembly.GetName().Name;
-            var fragments = new[] { assemblyName, "Templates", templateDir, templateName, "hs" };
+            var fragments = new[] { assemblyName, "Templates", templateDir, templateName, "hz" };
             var templatePath = string.Join(".", fragments.Where(i => i != null));
 
             using var stream = assembly.GetManifestResourceStream(templatePath);
