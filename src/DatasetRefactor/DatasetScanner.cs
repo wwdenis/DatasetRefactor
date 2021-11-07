@@ -11,9 +11,9 @@ namespace DatasetRefactor
 {
     public class DatasetScanner
     {
-        const string DatasetBaseType = "System.Data.DataSet";
-        const string TableBaseType = "System.Data.DataTable";
-        const string AdapterBaseType = "System.ComponentModel.Component";
+        private static readonly string[] DatasetBaseTypes = new[] { "System.Data.DataSet" };
+        private static readonly string[] TableBaseTypes = new[] { "System.Data.TypedTableBase`1", "System.Data.DataTable" };
+        private static readonly string[] AdapterBaseTypes = new[] { "System.ComponentModel.Component" };
 
         private readonly Assembly assembly;
 
@@ -24,15 +24,15 @@ namespace DatasetRefactor
 
         public IEnumerable<TableGroup> Scan(string tableName = null)
         {
-            var datasets = this.assembly.FindTypes(DatasetBaseType);
-            var adapters = this.assembly.FindTypes(AdapterBaseType);
+            var datasets = this.assembly.FindTypes(DatasetBaseTypes);
+            var adapters = this.assembly.FindTypes(AdapterBaseTypes);
 
             var result = new List<TableGroup>();
 
             if (!string.IsNullOrWhiteSpace(tableName))
             {
                 datasets = from i in datasets
-                           let tables = i.FindTypes(TableBaseType, tableName)
+                           let tables = i.FindTypes(TableBaseTypes, tableName)
                            where tables.Any()
                            select i;
             }
@@ -40,7 +40,7 @@ namespace DatasetRefactor
             foreach (var datasetType in datasets)
             {
                 var datasetInfo = BuildDataset(datasetType);
-                var tables = datasetType.FindTypes(TableBaseType, tableName);
+                var tables = datasetType.FindTypes(TableBaseTypes, tableName);
 
                 foreach (var tableType in tables)
                 {
