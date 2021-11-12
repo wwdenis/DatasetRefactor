@@ -2,5 +2,6 @@
   <PropertyGroup>
     <TargetFrameworks>net472</TargetFrameworks>
     <OutputType>Library</OutputType>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 </Project>
