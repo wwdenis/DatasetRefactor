@@ -97,6 +97,10 @@ namespace DatasetRefactor.Extensions
         {
             var type = instance.GetType();
             var prop = type.GetProperty(name, AllMembers);
+            if (prop is null)
+            {
+                return default;
+            }
             return (T)prop.GetValue(instance);
         }
 
@@ -166,7 +170,7 @@ namespace DatasetRefactor.Extensions
             {
                 var value = prop.GetValue(instance);
 
-                if (!prop.PropertyType.IsSimple())
+                if (value is not null && !prop.PropertyType.IsSimple())
                 {
                     if (value is IEnumerable collection)
                     {

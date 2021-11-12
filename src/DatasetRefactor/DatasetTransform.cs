@@ -30,48 +30,60 @@ namespace DatasetRefactor
             }
 
             var first = groups.First();
-            var rootNamespace = first.Dataset.Namespace;
+            var projectFile = Path.ChangeExtension(first.Dataset.Namespace, "csproj");
 
-            var templates = new (string Dir, string Name, string Extension, bool IsBase, string FileName)[]
+            var mainTemplates = new Dictionary<string, bool>()
             {
-                ("Main", "Row", "cs", false, null),
-                ("Main", "DataTable", "cs", false, null),
-                ("Main", "TableAdapter", "cs", false, null),
-                ("Base", "Project", "csproj", true, rootNamespace),
-                ("Base", "DbAdapter", "cs", true, null),
-                ("Base", "DbRow", "cs", true, null),
-                ("Base", "DbTable", "cs", true, null),
-                ("Base", "DbColumnAttribute", "cs", true, null),
-                ("Base", "GlobalSettings", "cs", true, null),
-                ("Base", "GlobalSupressions", "cs", true, null),
+                { "TableAdapter", true },
+                { "DataTable", false },
+                { "Row", false },
             };
 
-            foreach (var template in templates)
+            var baseTemplates = new Dictionary<string, string>()
             {
-                var selected = template.IsBase ? groups.Take(1) : groups;
+                { "DbAdapter", null },
+                { "DbTable", null },
+                { "DbRow", null },
+                { "DbColumnAttribute", null },
+                { "GlobalSettings", null },
+                { "GlobalSupressions", null },
+                { "Project", projectFile },
+            };
 
-                foreach (var group in selected)
+            foreach (var group in groups)
+            {
+                foreach (var template in mainTemplates)
                 {
-                    var targetDir = string.Empty;
-                    var targetName = template.FileName ?? template.Name;
-                    
-                    if (!template.IsBase)
+                    var templateName = template.Key;
+                    var isAdapter = template.Value;
+                    if (!isAdapter && group.Table is null)
                     {
-                        targetDir = group.Dataset.Name;
-                        targetName = group.Table.Name + template.Name;
+                        continue;
                     }
 
-                    var targetFile = Path.ChangeExtension(targetName, template.Extension);
-                    var contents = ReadTemplate(template.Name, template.Dir);
-                    var file = RenderFile(group, contents, targetFile, targetDir, template.IsBase);
+                    var targetDir = group.Dataset.Name;
+                    var targetPrefix = group.Table?.Name ?? group.Adapter.Name;
+                    var targetName = targetPrefix + templateName;
+                    var targetFile = Path.ChangeExtension(targetName, "cs");
+                    var contents = ReadTemplate(templateName, "Main");
+                    var file = RenderFile(group, contents, targetFile, targetDir);
                     files.Add(file);
                 }
             }
 
+            foreach (var template in baseTemplates)
+            {
+                var templateName = template.Key;
+                var targetFile = template.Value ?? Path.ChangeExtension(templateName, "cs");
+                var contents = ReadTemplate(templateName, "Base");
+                var file = RenderFile(first, contents, targetFile, null);
+                files.Add(file);
+            }
+            
             return files;
         }
 
-        private static TransformFile RenderFile(TableGroup group, string template, string targetFile, string targetDir, bool isBase)
+        private static TransformFile RenderFile(TableGroup group, string template, string targetFile, string targetDir)
         {
             var source = group.ToDictionary();
             var writer = new Writer(template);
@@ -83,8 +95,8 @@ namespace DatasetRefactor
                 Directory = targetDir,
                 Contents = generated,
                 Source = source,
-                Table = group.Table.Name,
-                IsBase = isBase,
+                Adapter = group.Adapter.Name,
+                IsBase = string.IsNullOrEmpty(targetDir),
             };
         }
 

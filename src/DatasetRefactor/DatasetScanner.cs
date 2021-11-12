@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using DatasetRefactor.Extensions;
 using DatasetRefactor.Models;
 
@@ -22,46 +23,69 @@ namespace DatasetRefactor
             this.assembly = assembly;
         }
 
-        public IEnumerable<TableGroup> Scan(string tableName = null)
+        public IEnumerable<TableGroup> Scan(string tableFilter = null)
         {
-            var datasets = this.assembly.FindTypes(DatasetBaseTypes);
             var adapters = this.assembly.FindTypes(AdapterBaseTypes);
-
             var result = new List<TableGroup>();
 
-            if (!string.IsNullOrWhiteSpace(tableName))
-            {
-                datasets = from i in datasets
-                           let tables = i.FindTypes(TableBaseTypes, tableName)
-                           where tables.Any()
-                           select i;
-            }
 
-            foreach (var datasetType in datasets)
+            foreach (var adapterType in adapters)
             {
-                var datasetInfo = BuildDataset(datasetType);
-                var tables = datasetType.FindTypes(TableBaseTypes, tableName);
-
-                foreach (var tableType in tables)
+                var found = TryFindTypes(adapterType, tableFilter, out var datasetType, out var tableType);
+                if (!found)
                 {
-                    var tableInfo = BuildTable(tableType);
-
-                    var adapterName = $"{tableInfo.Name}TableAdapter";
-                    var adapterType = adapters.Single(i => i.Name.Equals(adapterName));
-                    var adapterInfo = BuildAdapter(adapterType);
-
-                    var tableGroup = new TableGroup
-                    {
-                        Dataset = datasetInfo,
-                        Table = tableInfo,
-                        Adapter = adapterInfo,
-                    };
-                    
-                    result.Add(tableGroup);
+                    continue;
                 }
+
+                var adapterInfo = BuildAdapter(adapterType);
+                var datasetInfo = BuildDataset(datasetType);
+                var tableInfo = BuildTable(tableType);
+
+                var tableGroup = new TableGroup
+                {
+                    Dataset = datasetInfo,
+                    Table = tableInfo,
+                    Adapter = adapterInfo,
+                };
+
+                result.Add(tableGroup);
             }
 
             return result;
+        }
+
+        private bool TryFindTypes(Type adapterType, string tableFilter, out Type datasetType, out Type tableType)
+        {
+            datasetType = null;
+            tableType = null;
+
+            var regex = new Regex(@"(?<Namespace>.*)\.(?<Dataset>\w*)TableAdapters\.(?<Table>.*)TableAdapter$");
+            var match = regex.Match(adapterType.FullName);
+
+            if (!match.Success)
+            {
+                return false;
+            }
+
+            var root = match.Groups["Namespace"].Value;
+            var dataset = match.Groups["Dataset"].Value;
+            var table = match.Groups["Table"].Value;
+
+            var datasetName = string.Join(".", root, dataset);
+            var tableName = string.Join(string.Empty, table, "DataTable");
+
+            if (!string.IsNullOrWhiteSpace(tableName) && !string.IsNullOrWhiteSpace(tableFilter) && tableName != tableFilter)
+            {
+                return false;
+            }
+
+            var datasets = this.assembly.FindTypes(DatasetBaseTypes);
+            var tables = this.assembly.FindTypes(TableBaseTypes);
+
+            datasetType = datasets.SingleOrDefault(i => i.FullName == datasetName);
+            tableType = datasetType?.GetNestedTypes().SingleOrDefault(i => i.Name == tableName);
+
+            return datasetType is not null;
         }
 
         private static DatasetInfo BuildDataset(Type type)
@@ -75,6 +99,11 @@ namespace DatasetRefactor
 
         private static TableInfo BuildTable(Type type)
         {
+            if (type is null)
+            {
+                return null;
+            }
+
             var rowName = type.Name.Replace("DataTable", "Row");
             var tableName = type.Name.Replace("DataTable", string.Empty);
             var datasetNamespace = type.FullName.Split('+').First();
@@ -262,12 +291,15 @@ namespace DatasetRefactor
             var selectCommands = instance.GetPropertyValue<IDbCommand[]>("CommandCollection");
             var updateCommands = new[]
             {
-                sqlAdapter.UpdateCommand,
-                sqlAdapter.InsertCommand,
-                sqlAdapter.DeleteCommand,
+                sqlAdapter?.UpdateCommand,
+                sqlAdapter?.InsertCommand,
+                sqlAdapter?.DeleteCommand,
             };
 
-            var allCommands = selectCommands.Union(updateCommands);
+            var allCommands = new List<IDbCommand>();
+            allCommands.AddRange(updateCommands);
+            allCommands.AddRange(selectCommands);
+            allCommands.RemoveAll(i => i is null);
 
             foreach (var cmd in allCommands)
             {

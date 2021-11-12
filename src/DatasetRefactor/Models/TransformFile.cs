@@ -13,7 +13,7 @@ namespace DatasetRefactor.Models
 
         public Dictionary<string, object> Source { get; set; }
         
-        public string Table { get; set; }
+        public string Adapter { get; set; }
 
         public bool IsBase { get; set; }
     }

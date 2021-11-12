@@ -100,12 +100,12 @@ namespace DatasetRefactor.UI
 
             var files = allFiles
                 .Where(i => !i.IsBase)
-                .GroupBy(p => p.Table)
+                .GroupBy(p => p.Adapter)
                 .Select(g => g.First());
 
             foreach (var file in files)
             {
-                var fileName = Path.ChangeExtension(file.Table, "json");
+                var fileName = Path.ChangeExtension(file.Adapter, "json");
                 var path = BuildPath(fileName, targetRoot, "Sources", file.Directory);
                 var json = Serialize(file.Source);
 
