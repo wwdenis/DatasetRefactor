@@ -20,6 +20,8 @@ namespace DatasetRefactor.UI
                     return 1;
                 }
 
+                Log($"Reading all Datasets from {assemblyFile}", success: true);
+
                 var assembly = Assembly.LoadFrom(assemblyFile);
                 var transform = new DatasetTransform(assembly);
                 var files = transform.Generate(tableName);
