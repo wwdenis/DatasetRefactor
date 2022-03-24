@@ -29,8 +29,13 @@ namespace DatasetRefactor
                 return files;
             }
 
-            var first = groups.First();
-            var projectFile = Path.ChangeExtension(first.Dataset.Namespace, "csproj");
+            var first = groups
+                .GroupBy(i => i.Dataset.Namespace)
+                .OrderBy(g => g.Count())
+                .Last()
+                .First();
+
+            var projectFile = $"{first.Dataset.Namespace}.csproj";
 
             var mainTemplates = new Dictionary<string, bool>()
             {
