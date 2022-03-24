@@ -39,7 +39,7 @@
         public #ReturnType# GetData#Suffix#(#+Parameters##Type# #Name##!.Last#, #!##+#)
         {
             var table = new #Table#DataTable();
-            this.Fill(table);
+            this.Fill#Suffix#(table#+Parameters#, #Name##+#);
             return table;
         }
     #+#

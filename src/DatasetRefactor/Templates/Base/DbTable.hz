@@ -29,6 +29,11 @@
             }
         }
 
+        public IEnumerator<T> AsEnumerable()
+        {
+            return this;
+        }
+
         public IEnumerator<T> GetEnumerator()
         {
             return this.Rows.Cast<T>().GetEnumerator();
