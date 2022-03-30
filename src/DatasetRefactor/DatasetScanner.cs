@@ -187,6 +187,7 @@ namespace DatasetRefactor
             {
                 Name = type.Name,
                 Namespace = type.Namespace,
+                Scalar = actions.Where(i => i.Type == ActionType.Scalar),
                 Select = actions.Where(i => i.Type == ActionType.Select),
                 Insert = actions.FirstOrDefault(i => i.Type == ActionType.Insert),
                 Delete = actions.FirstOrDefault(i => i.Type == ActionType.Delete),
@@ -233,9 +234,10 @@ namespace DatasetRefactor
 
         private static CommandInfo ParseCommand(ActionInfo action, object instance)
         {
+            var name = action.Name;
             var sqlAdapter = instance.GetPropertyValue<SqlDataAdapter>("Adapter");
 
-            var command = action.Type switch
+            IDbCommand command = action.Type switch
             {
                 ActionType.Select => sqlAdapter.SelectCommand,
                 ActionType.Insert => sqlAdapter.InsertCommand,
@@ -244,12 +246,34 @@ namespace DatasetRefactor
                 _ => null,
             };
 
+            if (command is null)
+            {
+                command = FindScalarCommand(action, instance);
+            }
+            else
+            {
+                name = action.Suffix;
+            }
+
             return new CommandInfo
             {
+                Name = name,
                 Type = action.Type,
-                Name = action.Suffix,
                 Text = command?.CommandText ?? string.Empty,
             };
+        }
+
+        private static IDbCommand FindScalarCommand(ActionInfo action, object instance)
+        {
+            var actionParams = action.Parameters.ToDictionary(k => k.Name, v => v.Type.TrimEnd('?'));
+            var commands = instance.GetPropertyValue<IDbCommand[]>("CommandCollection");
+
+            var query = from i in commands
+                        let sqlParams = i.ToParameterDictionary()
+                        where !sqlParams.Except(actionParams).Any() && !actionParams.Except(sqlParams).Any()
+                        select i;
+
+            return query.Count() == 1 ? query.Single() : null;
         }
 
         private static (ActionType, string) ParseActionType(MethodInfo method)

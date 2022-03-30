@@ -17,6 +17,8 @@ namespace DatasetRefactor.Models
 
         public IEnumerable<CommandInfo> Commands { get; set; }
         
+        public IEnumerable<ActionInfo> Scalar { get; set; }
+
         public IEnumerable<ActionInfo> Select { get; set; }
 
         public ActionInfo Insert { get; set; }
