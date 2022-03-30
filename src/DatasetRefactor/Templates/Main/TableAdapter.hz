@@ -11,13 +11,10 @@
 #+Adapter#
     public partial class #Name# : DbAdapter
     {
-        private static readonly Dictionary<string, string> Commands = new Dictionary<string, string>
-        {
     #+Commands#
-            { "#Type##Name#", @"#Text#" },
-    #+#
-        };
+        private const string Sql_#Type#_#Name# = @"#Text#";
 
+    #+#
         public #Name#()
         {
             this.ConnectionString = GlobalSettings.ConnectionString;
@@ -26,28 +23,26 @@
 
         public #ReturnType# #Name#(#+Parameters##Type# #Name##!.Last#, #!##+#)
         {
-            var sql = Commands["#Type#"];
             var parameters = new Dictionary<string, object>
             {
                 #+Parameters#
                 { "@#Name#", #Name# }, 
                 #+#
             };
-            return this.ExecuteScalar(sql, parameters);
+            return this.ExecuteScalar(Sql_#Type#_#Name#, parameters);
         }
     #+#
     #+Select#
 
         public int Fill#Suffix#(#Table#DataTable table#+Parameters#, #Type# #Name##+#)
         {
-            var sql = Commands["#Type#"];
             var parameters = new Dictionary<string, object>
             {
                 #+Parameters#
                 { "@#Name#", #Name# },
                 #+#
             };
-            return this.Fill(table, sql, parameters);
+            return this.Fill(table, Sql_#Type#_#Suffix#, parameters);
         }
 
         public #ReturnType# GetData#Suffix#(#+Parameters##Type# #Name##!.Last#, #!##+#)
@@ -61,54 +56,49 @@
 
         public int Insert(#+Parameters##Type# #Name##!.Last#, #!##+#)
         {
-            var sql = Commands["#Type#"];
             var parameters = new Dictionary<string, object>
             {
                 #+Parameters#
                 { "@#Name#", #Name# },
                 #+#
             };
-            return this.Execute(sql, parameters);
+            return this.Execute(Sql_#Type#_#Suffix#, parameters);
         }
     #+#
     #+Delete#
 
         public int Delete(#+Parameters##Type# #Name##!.Last#, #!##+#)
         {
-            var sql = Commands["#Type#"];
             var parameters = new Dictionary<string, object>
             {
                 #+Parameters#
                 { "@#Name#", #Name# }, 
                 #+#
             };
-            return this.Execute(sql, parameters);
+            return this.Execute(Sql_#Type#_#Suffix#, parameters);
         }
     #+#
     #+Update#
 
         public int Update(#+Parameters##Type# #Name##!.Last#, #!##+#)
         {
-            var sql = Commands["#Type#"];
             var parameters = new Dictionary<string, object>
             {
                 #+Parameters#
                 { "@#Name#", #Name# },
                 #+#
             };
-            return this.Execute(sql, parameters);
+            return this.Execute(Sql_#Type#_#Suffix#, parameters);
         }
 
         public int Update(#Table#DataTable table)
         {
-            var sql = Commands["#Type#"];
-            return this.Update(sql, table);
+            return this.Update(Sql_#Type#_#Suffix#, table);
         }
 
         public int Update(#Table#Row row)
         {
-            var sql = Commands["#Type#"];
-            return this.Update(sql, row);
+            return this.Update(Sql_#Type#_#Suffix#, row);
         }
     #+#
     }
