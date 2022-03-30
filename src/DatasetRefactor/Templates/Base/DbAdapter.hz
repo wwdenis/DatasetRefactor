@@ -18,12 +18,12 @@
 
         protected virtual void Dispose(bool disposing)
         {
-            // No conneciton remain open
+            // No connection remain open
         }
 
         public void Dispose()
         {
-            // No conneciton remain open
+            // No connection remain open
         }
 
         protected string ConnectionString { get; set; }
@@ -63,24 +63,6 @@
             }
 
             return affected;
-        }
-
-        protected int ExecuteScalar(string sql, Dictionary<string, object> parameters = null)
-        {
-            var returnValue = 0;
-
-            using (var connection = CreateConnection())
-            {
-                using (var command = new SqlCommand(sql, connection))
-                {
-                    AddParameters(command, parameters);
-                    connection.Open();
-                    returnValue = command.ExecuteScalar();
-                    connection.Close();
-                }
-            }
-
-            return returnValue;
         }
 
         protected T ExecuteScalar<T>(string sql, Dictionary<string, object> parameters = null)
