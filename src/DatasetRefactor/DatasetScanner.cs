@@ -108,6 +108,7 @@ namespace DatasetRefactor
             var tableName = type.Name.Replace("DataTable", string.Empty);
             var datasetNamespace = type.FullName.Split('+').First();
 
+            var columns = BuildColumns(type);
             var actions = new List<ActionInfo>();
             var methods = type
                 .GetDeclaredMethods()
@@ -122,12 +123,6 @@ namespace DatasetRefactor
                     actions.Add(action);
                 }
             }
-
-            var columns = BuildColumns(type);
-            if (!columns.Any())
-            {
-                return null;
-            }            
 
             return new TableInfo
             {
