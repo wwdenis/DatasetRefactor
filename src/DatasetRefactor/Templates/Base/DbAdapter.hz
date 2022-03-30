@@ -65,6 +65,24 @@
             return affected;
         }
 
+        protected int ExecuteScalar(string sql, Dictionary<string, object> parameters = null)
+        {
+            var returnValue = 0;
+
+            using (var connection = CreateConnection())
+            {
+                using (var command = new SqlCommand(sql, connection))
+                {
+                    AddParameters(command, parameters);
+                    connection.Open();
+                    returnValue = command.ExecuteScalar();
+                    connection.Close();
+                }
+            }
+
+            return returnValue;
+        }
+
         protected T ExecuteScalar<T>(string sql, Dictionary<string, object> parameters = null)
         {
             object result = null;
