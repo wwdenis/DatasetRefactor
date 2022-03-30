@@ -12,7 +12,7 @@
     public partial class #Name# : DbAdapter
     {
     #+Commands#
-        private const string Sql_#Type#_#Name# = @"#Text#";
+        private const string Sql_#Type##?Name#_#?##Name# = @"#Text#";
 
     #+#
         public #Name#()
@@ -29,7 +29,7 @@
                 { "@#Name#", #Name# }, 
                 #+#
             };
-            return this.ExecuteScalar(Sql_#Type#_#Name#, parameters);
+            return this.ExecuteScalar<#ReturnType#>(Sql_#Type##?Name#_#?##Name#, parameters);
         }
     #+#
     #+Select#
@@ -42,7 +42,7 @@
                 { "@#Name#", #Name# },
                 #+#
             };
-            return this.Fill(table, Sql_#Type#_#Suffix#, parameters);
+            return this.Fill(table, Sql_#Type##?Suffix#_#?##Suffix#, parameters);
         }
 
         public #ReturnType# GetData#Suffix#(#+Parameters##Type# #Name##!.Last#, #!##+#)
@@ -62,7 +62,7 @@
                 { "@#Name#", #Name# },
                 #+#
             };
-            return this.Execute(Sql_#Type#_#Suffix#, parameters);
+            return this.Execute(Sql_#Type##?Suffix#_#?##Suffix#, parameters);
         }
     #+#
     #+Delete#
@@ -75,7 +75,7 @@
                 { "@#Name#", #Name# }, 
                 #+#
             };
-            return this.Execute(Sql_#Type#_#Suffix#, parameters);
+            return this.Execute(Sql_#Type##?Suffix#_#?##Suffix#, parameters);
         }
     #+#
     #+Update#
@@ -88,17 +88,17 @@
                 { "@#Name#", #Name# },
                 #+#
             };
-            return this.Execute(Sql_#Type#_#Suffix#, parameters);
+            return this.Execute(Sql_#Type##?Suffix#_#?##Suffix#, parameters);
         }
 
         public int Update(#Table#DataTable table)
         {
-            return this.Update(Sql_#Type#_#Suffix#, table);
+            return this.Update(Sql_#Type##?Suffix#_#?##Suffix#, table);
         }
 
         public int Update(#Table#Row row)
         {
-            return this.Update(Sql_#Type#_#Suffix#, row);
+            return this.Update(Sql_#Type##?Suffix#_#?##Suffix#, row);
         }
     #+#
     }
