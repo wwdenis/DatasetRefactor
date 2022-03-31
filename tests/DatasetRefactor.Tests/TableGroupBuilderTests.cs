@@ -13,7 +13,7 @@ using Xunit;
 
 namespace DatasetRefactor.Tests
 {
-    public class DatasetScannerTests
+    public class TableGroupBuilderTests
     {
         [Fact]
         public void Should_Generate()
@@ -170,6 +170,7 @@ namespace DatasetRefactor.Tests
                 ReturnType = $"{tableName}Row",
                 Suffix = $"By{keyColumn}",
                 Table = tableName,
+                Command = "FindById",
                 Type = ActionType.Find,
                 Parameters = findParameters,
             };
@@ -187,7 +188,7 @@ namespace DatasetRefactor.Tests
                                   {
                                       Type = i,
                                       Text = $"Command: {i}",
-                                      Name = "",
+                                      Name = $"{i}",
                                   };
 
             return new[]
@@ -211,25 +212,27 @@ namespace DatasetRefactor.Tests
                         Name = tableName + "TableAdapter",
                         Namespace = string.Join("", rootNamespace, ".", datasetName, "TableAdapters"),
                         Commands = adapterCommands,
-                        Insert = BuildAction(ActionType.Insert, "Insert", "int", tableName, insertParameters),
-                        Delete = BuildAction(ActionType.Delete, "Delete", "int", tableName, deleteParameters),
-                        Update = BuildAction(ActionType.Update, "Update", "int", tableName, updateParameters),
+                        Insert = BuildAction(ActionType.Insert, "Insert", "Insert", "int", tableName, insertParameters),
+                        Delete = BuildAction(ActionType.Delete, "Delete", "Delete", "int", tableName, deleteParameters),
+                        Update = BuildAction(ActionType.Update, "Update", "Update", "int", tableName, updateParameters),
                         Select = new[]
                         {
-                            BuildAction(ActionType.Select, "GetData", $"{tableName}DataTable", tableName)
+                            BuildAction(ActionType.Select, "GetData", "Select", $"{tableName}DataTable", tableName)
                         },
+                        Scalar = new ActionInfo[0],
                     }
 
                 }
             };
         }
 
-        static ActionInfo BuildAction(ActionType type, string name, string returnType, string tableName, IEnumerable<ActionParameter> parameters = null)
+        static ActionInfo BuildAction(ActionType type, string name, string command, string returnType, string tableName, IEnumerable<ActionParameter> parameters = null)
         {
             return new ActionInfo
             {
                 Type = type,
                 Name = name,
+                Command = command,
                 Suffix = "",
                 ReturnType = returnType,
                 Table = tableName,
