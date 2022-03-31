@@ -35,8 +35,11 @@ namespace DatasetRefactor.Tests
 
             success.Should().BeTrue();
 
-            var subject = new DatasetScanner(assembly);
-            var result = subject.Scan();
+            var scanner = new TypeScanner(assembly);
+            var metadata = scanner.Scan();
+
+            var subject = new TableGroupBuilder();
+            var result = subject.Build(metadata);
 
             result
                 .Should()

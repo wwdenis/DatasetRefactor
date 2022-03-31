@@ -8,7 +8,7 @@ using HashScript;
 
 namespace DatasetRefactor
 {
-    public class DatasetTransform
+    public class CodeBuilder
     {
         public IEnumerable<TransformFile> Generate(IEnumerable<TableGroup> groups)
         {
@@ -97,7 +97,7 @@ namespace DatasetRefactor
 
         private static string ReadTemplate(string templateName, string templateDir)
         {
-            var assembly = typeof(DatasetTransform).Assembly;
+            var assembly = typeof(CodeBuilder).Assembly;
             var assemblyName = assembly.GetName().Name;
             var fragments = new[] { assemblyName, "Templates", templateDir, templateName, "hz" };
             var templatePath = string.Join(".", fragments.Where(i => i != null));

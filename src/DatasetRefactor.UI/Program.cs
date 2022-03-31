@@ -24,13 +24,15 @@ namespace DatasetRefactor.UI
 
                 var assembly = Assembly.LoadFrom(assemblyFile);
 
-                var scanner = new DatasetScanner(assembly);
-                scanner.Progress += Scanner_Progress;
+                var scanner = new TypeScanner(assembly);
+                var codeBuilder = new CodeBuilder();
+                var tableBuilder = new TableGroupBuilder();
 
-                var groups = scanner.Scan(tableName);
-                
-                var transform = new DatasetTransform();
-                var files = transform.Generate(groups);
+                tableBuilder.Progress += Builder_Progress;
+
+                var metadata = scanner.Scan();
+                var groups = tableBuilder.Build(metadata);
+                var files = codeBuilder.Generate(groups);
 
                 if (saveSource == "1")
                 {
@@ -50,7 +52,7 @@ namespace DatasetRefactor.UI
             }
         }
 
-        private static void Scanner_Progress(object sender, string message)
+        private static void Builder_Progress(object sender, string message)
         {
             Log(message);
         }
