@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using DatasetRefactor.Extensions;
 using DatasetRefactor.Models;
 using HashScript;
@@ -11,17 +10,8 @@ namespace DatasetRefactor
 {
     public class DatasetTransform
     {
-        private readonly Assembly assembly;
-
-        public DatasetTransform(Assembly assembly)
+        public IEnumerable<TransformFile> Generate(IEnumerable<TableGroup> groups)
         {
-            this.assembly = assembly;
-        }
-
-        public IEnumerable<TransformFile> Generate(string tableFilter = null)
-        {
-            var scanner = new DatasetScanner(assembly);
-            var groups = scanner.Scan(tableFilter);
             var files = new List<TransformFile>();
 
             if (!groups.Any())

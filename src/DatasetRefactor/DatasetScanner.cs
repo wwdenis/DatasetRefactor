@@ -12,6 +12,8 @@ namespace DatasetRefactor
 {
     public class DatasetScanner
     {
+        public event EventHandler<string> Progress;
+
         private static readonly string[] DatasetBaseTypes = new[] { "System.Data.DataSet" };
         private static readonly string[] TableBaseTypes = new[] { "System.Data.TypedTableBase`1", "System.Data.DataTable" };
         private static readonly string[] AdapterBaseTypes = new[] { "System.ComponentModel.Component" };
@@ -24,6 +26,9 @@ namespace DatasetRefactor
 
         public IEnumerable<TableGroup> Scan(string tableFilter = null)
         {
+            this.OnProgress($"Starting Reading Datasets");
+            this.OnProgress($"Source: {this.assembly.FullName}");
+
             var adapters = this.assembly.FindTypes(AdapterBaseTypes);
             var result = new List<TableGroup>();
 
@@ -34,6 +39,8 @@ namespace DatasetRefactor
                 {
                     continue;
                 }
+
+                this.OnProgress(adapterType.Name);
 
                 var adapterInfo = BuildAdapter(adapterType);
                 var datasetInfo = new DatasetInfo(datasetType);
@@ -48,6 +55,8 @@ namespace DatasetRefactor
 
                 result.Add(tableGroup);
             }
+
+            this.OnProgress($"Finished Reading Datasets");
 
             return result;
         }
@@ -262,6 +271,11 @@ namespace DatasetRefactor
             var suffix = actionName.GetSuffix("Fill", "GetData", "Get", "Find");
             suffix += separator;
             return suffix;
+        }
+
+        private void OnProgress(string message)
+        {
+            this.Progress.Invoke(this, message);
         }
     }
 }

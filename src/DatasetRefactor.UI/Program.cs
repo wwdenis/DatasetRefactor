@@ -20,11 +20,17 @@ namespace DatasetRefactor.UI
                     return 1;
                 }
 
-                Log($"Reading all Datasets from {assemblyFile}", success: true);
+                LogSuccess($"Reading all Datasets from {assemblyFile}");
 
                 var assembly = Assembly.LoadFrom(assemblyFile);
-                var transform = new DatasetTransform(assembly);
-                var files = transform.Generate(tableName);
+
+                var scanner = new DatasetScanner(assembly);
+                scanner.Progress += Scanner_Progress;
+
+                var groups = scanner.Scan(tableName);
+                
+                var transform = new DatasetTransform();
+                var files = transform.Generate(groups);
 
                 if (saveSource == "1")
                 {
@@ -33,15 +39,20 @@ namespace DatasetRefactor.UI
 
                 SaveGenerated(files, targetDir);
 
-                Log($"Finished: {files.Count()} Files written", success: true);
+                LogSuccess($"Finished: {files.Count()} Files written");
 
                 return 0;
             }
             catch (Exception ex)
             {
-                Log(ex.Message, error: true);
+                LogError(ex.ToString());
                 return 2;
             }
+        }
+
+        private static void Scanner_Progress(object sender, string message)
+        {
+            Log(message);
         }
 
         static string Serialize(object data)
@@ -90,7 +101,7 @@ namespace DatasetRefactor.UI
             }
 
             errorMessage = $"Error: {errorMessage}\n\nUsage: untier -source=[assembly] -target=[directory] -save=[0/1] -dataset=[name]";
-            Log(errorMessage, error: true);
+            LogError(errorMessage);
             return false;
         }
 
@@ -153,18 +164,23 @@ namespace DatasetRefactor.UI
             return Path.Combine(path, fileName);
         }
 
-        private static void Log(string message, bool success = false, bool error = false)
+        private static void LogSuccess(string message)
         {
-            if (success)
-            {
-                Console.ForegroundColor = ConsoleColor.Green;
-            }
-            else if (error)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-            }
+            Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine(message);
             Console.ResetColor();
+        }
+
+        private static void LogError(string message)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(message);
+            Console.ResetColor();
+        }
+
+        private static void Log(string message)
+        {
+            Console.WriteLine(message);
         }
     }
 }
