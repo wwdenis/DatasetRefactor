@@ -31,6 +31,7 @@ namespace DatasetRefactor.Extensions
                    let baseType = genericBase ?? i.BaseType
                    where baseNames.Contains(baseType.FullName)
                    && (string.IsNullOrEmpty(typeName) || i.Name.StartsWith(typeName, StringComparison.Ordinal))
+                   orderby i.Name
                    select i;
         }
 

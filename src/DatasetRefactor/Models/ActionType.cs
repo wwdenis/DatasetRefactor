@@ -7,7 +7,7 @@
         Insert,
         Update,
         Delete,
-        Scalar,
+        Execute,
         Find,
     }
 }

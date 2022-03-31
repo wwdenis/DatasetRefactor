@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace DatasetRefactor.Extensions
 {
@@ -17,6 +18,19 @@ namespace DatasetRefactor.Extensions
 
             suffix = null;
             return false;
+        }
+
+        public static string GetSuffix(this string text, params string[] prefixes)
+        {
+            foreach (var prefix in prefixes)
+            {
+                if (text.HasSuffix(prefix, out var suffix))
+                {
+                    return suffix;
+                }
+            }
+
+            return string.Empty;
         }
     }
 }

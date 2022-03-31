@@ -14,6 +14,8 @@ namespace DatasetRefactor.Models
 
         public string Table { get; set; }
 
+        public string Command { get; set; }
+
         public ActionType Type { get; set; }
 
         public string Name { get; set; }

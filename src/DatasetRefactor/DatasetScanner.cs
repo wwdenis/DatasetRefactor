@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using DatasetRefactor.Extensions;
+using DatasetRefactor.Infrastructure;
 using DatasetRefactor.Models;
 
 namespace DatasetRefactor
@@ -15,7 +15,6 @@ namespace DatasetRefactor
         private static readonly string[] DatasetBaseTypes = new[] { "System.Data.DataSet" };
         private static readonly string[] TableBaseTypes = new[] { "System.Data.TypedTableBase`1", "System.Data.DataTable" };
         private static readonly string[] AdapterBaseTypes = new[] { "System.ComponentModel.Component" };
-
         private readonly Assembly assembly;
 
         public DatasetScanner(Assembly assembly)
@@ -28,7 +27,6 @@ namespace DatasetRefactor
             var adapters = this.assembly.FindTypes(AdapterBaseTypes);
             var result = new List<TableGroup>();
 
-
             foreach (var adapterType in adapters)
             {
                 var found = TryFindTypes(adapterType, tableFilter, out var datasetType, out var tableType);
@@ -38,7 +36,7 @@ namespace DatasetRefactor
                 }
 
                 var adapterInfo = BuildAdapter(adapterType);
-                var datasetInfo = BuildDataset(datasetType);
+                var datasetInfo = new DatasetInfo(datasetType);
                 var tableInfo = BuildTable(tableType);
 
                 var tableGroup = new TableGroup
@@ -74,7 +72,7 @@ namespace DatasetRefactor
             var datasetName = string.Join(".", root, dataset);
             var tableName = string.Join(string.Empty, table, "DataTable");
 
-            if (!string.IsNullOrWhiteSpace(tableName) && !string.IsNullOrWhiteSpace(tableFilter) && tableName != tableFilter)
+            if (!string.IsNullOrWhiteSpace(table) && !string.IsNullOrWhiteSpace(tableFilter) && table != tableFilter)
             {
                 return false;
             }
@@ -86,15 +84,6 @@ namespace DatasetRefactor
             tableType = datasetType?.GetNestedTypes().SingleOrDefault(i => i.Name == tableName);
 
             return datasetType is not null;
-        }
-
-        private static DatasetInfo BuildDataset(Type type)
-        {
-            return new DatasetInfo
-            {
-                Name = type.Name,
-                Namespace = type.Namespace,
-            };
         }
 
         private static TableInfo BuildTable(Type type)
@@ -116,7 +105,7 @@ namespace DatasetRefactor
 
             foreach (var method in methods)
             {
-                var action = ParseAction(method);
+                var action = BuildAction(method);
                 if (action?.Type == ActionType.Find)
                 {
                     action.Table = tableName;
@@ -161,33 +150,32 @@ namespace DatasetRefactor
 
         private static AdapterInfo BuildAdapter(Type type)
         {
-            var tableName = type.Name.Replace("TableAdapter", string.Empty);
-            var adapter = InitAdapter(type);
-            var methods = type.GetDeclaredMethods();
+            using var manager = SqlManager.Create(type);
             
             var actions = new HashSet<ActionInfo>();
             var commands = new HashSet<CommandInfo>();
 
+            var methods = from i in type.GetDeclaredMethods()
+                          let parameters = i.GetParameters()
+                          where parameters.All(p => p.ParameterType.IsSimple())
+                          select i;
+
             foreach (var method in methods)
             {
-                var action = ParseAction(method);
+                manager.CallMethod(method);
 
-                if (action is not null)
-                {
-                    action.Table = tableName;
-                    actions.Add(action);
-                    
-                    adapter.InvokeDefault(method);
-                    var command = ParseCommand(action, adapter);
-                    commands.Add(command);
-                }
+                var action = BuildAction(method, manager);
+                var command = BuildCommand(method, manager, action);
+
+                actions.Add(action);
+                commands.Add(command);
             }
 
             return new AdapterInfo
             {
                 Name = type.Name,
                 Namespace = type.Namespace,
-                Scalar = actions.Where(i => i.Type == ActionType.Scalar),
+                Scalar = actions.Where(i => i.Type == ActionType.Execute),
                 Select = actions.Where(i => i.Type == ActionType.Select),
                 Insert = actions.FirstOrDefault(i => i.Type == ActionType.Insert),
                 Delete = actions.FirstOrDefault(i => i.Type == ActionType.Delete),
@@ -196,136 +184,84 @@ namespace DatasetRefactor
             };
         }
 
-        private static ActionInfo ParseAction(MethodInfo method)
+        private static ActionInfo BuildAction(MethodInfo method, SqlManager manager = null)
         {
-            var parameters = new List<ActionParameter>();
+            var isSelect = manager?.Adapter?.SelectCommand != null;
+            var tableName = manager?.TableName;
+            var actionName = method.Name;
+            var actionType = ActionType.None;
 
-            foreach (var parameter in method.GetParameters())
+            var isSpecial = Enum.TryParse(actionName, out ActionType specialType);
+            var isFind = actionName.HasSuffix("Find", out _);
+
+            if (isSelect)
             {
-                if (!parameter.ParameterType.IsSimple())
-                {
-                    return null;
-                }
-
-                var actionParameter = ParseParameter(parameter);
-                parameters.Add(actionParameter);
+                actionType = ActionType.Select;
             }
-
-            var (type, suffix) = ParseActionType(method);
-
-            return new ActionInfo
+            else if(isFind)
             {
-                Type = type,
-                Name = method.Name,
-                Suffix = suffix,
-                ReturnType = method.ReturnType.GetCsName(),
-                Parameters = parameters,
-            };
-        }
-
-        private static ActionParameter ParseParameter(ParameterInfo parameter)
-        {
-            return new ActionParameter
+                actionType = ActionType.Find;
+            }
+            else if (isSpecial)
             {
-                Name = parameter.Name,
-                Type = parameter.ParameterType.GetCsName(),
-            };
-        }
-
-        private static CommandInfo ParseCommand(ActionInfo action, object instance)
-        {
-            var name = action.Name;
-            var sqlAdapter = instance.GetPropertyValue<SqlDataAdapter>("Adapter");
-
-            IDbCommand command = action.Type switch
-            {
-                ActionType.Select => sqlAdapter.SelectCommand,
-                ActionType.Insert => sqlAdapter.InsertCommand,
-                ActionType.Delete => sqlAdapter.DeleteCommand,
-                ActionType.Update => sqlAdapter.UpdateCommand,
-                _ => null,
-            };
-
-            if (command is null)
-            {
-                command = FindScalarCommand(action, instance);
+                actionType = specialType;
             }
             else
             {
-                name = action.Suffix;
+                actionType = ActionType.Execute;
             }
+
+            return new ActionInfo
+            {
+                Type = actionType,
+                Suffix = GetSuffix(actionName),
+                Name = actionName,
+                Table = tableName,
+                Command = BuildCommandName(actionType, actionName),
+                ReturnType = method.ReturnType.GetCsName(),
+                Parameters = method.GetParameters().Select(i => new ActionParameter(i)),
+            };
+        }
+
+        private static CommandInfo BuildCommand(MethodInfo method, SqlManager manager, ActionInfo action)
+        {
+            var adapter = manager.Adapter;
+
+            var command = action.Type switch
+            {
+                ActionType.Select => adapter.SelectCommand,
+                ActionType.Insert => adapter.InsertCommand,
+                ActionType.Delete => adapter.DeleteCommand,
+                ActionType.Update => adapter.UpdateCommand,
+                _ => manager.GetLastCalled(),
+            };
 
             return new CommandInfo
             {
-                Name = name,
+                Name = BuildCommandName(action.Type, method.Name),
                 Type = action.Type,
                 Text = command?.CommandText ?? string.Empty,
             };
         }
 
-        private static IDbCommand FindScalarCommand(ActionInfo action, object instance)
+        private static string BuildCommandName(ActionType actionType, string actionName)
         {
-            var actionParams = action.Parameters.ToDictionary(k => k.Name, v => v.Type.TrimEnd('?'));
-            var commands = instance.GetPropertyValue<IDbCommand[]>("CommandCollection");
+            var suffix = GetSuffix(actionName, "_");
 
-            var query = from i in commands
-                        let sqlParams = i.ToParameterDictionary()
-                        where !sqlParams.Except(actionParams).Any() && !actionParams.Except(sqlParams).Any()
-                        select i;
-
-            return query.Count() == 1 ? query.Single() : null;
+            return actionType switch
+            {
+                ActionType.Select => $"Select{suffix}",
+                ActionType.Execute => $"Execute_{actionName}",
+                ActionType.Insert or ActionType.Delete or ActionType.Update => $"{actionType}",
+                _ => actionName,
+            };
         }
 
-        private static (ActionType, string) ParseActionType(MethodInfo method)
+        private static string GetSuffix(string actionName, string separator = "")
         {
-            if (Enum.TryParse<ActionType>(method.Name, out var actionType))
-            {
-                return (actionType, string.Empty);
-            }
-
-            var prefixMap = new Dictionary<string, ActionType>
-            {
-                { "Fill", ActionType.Select },
-                { "GetData", ActionType.Select },
-                { "Find", ActionType.Find },
-            };
-
-            foreach (var prefix in prefixMap)
-            {
-                if (method.Name.HasSuffix(prefix.Key, out var suffix))
-                {
-                    return (prefix.Value, suffix);
-                }
-            }
-
-            return (ActionType.Scalar, string.Empty);
-        }
-
-        private static object InitAdapter(Type type)
-        {
-            var instance = Activator.CreateInstance(type);
-            instance.InvokeDefault("InitCommandCollection");
-            
-            var sqlAdapter = instance.GetPropertyValue<SqlDataAdapter>("Adapter");
-            var selectCommands = instance.GetPropertyValue<IDbCommand[]>("CommandCollection");
-            var updateCommands = new[]
-            {
-                sqlAdapter?.UpdateCommand,
-                sqlAdapter?.InsertCommand,
-                sqlAdapter?.DeleteCommand,
-            };
-
-            var allCommands = new List<IDbCommand>();
-            allCommands.AddRange(updateCommands);
-            allCommands.AddRange(selectCommands);
-            allCommands.RemoveAll(i => i is null);
-
-            foreach (var cmd in allCommands)
-            {
-                cmd.Connection = null;
-            }
-
-            return instance;
+            var suffix = actionName.GetSuffix("Fill", "GetData", "Get", "Find");
+            suffix += separator;
+            return suffix;
         }
     }
 }
