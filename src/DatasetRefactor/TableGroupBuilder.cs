@@ -216,7 +216,10 @@ namespace DatasetRefactor
         private static string GetSuffix(string actionName, string separator = "")
         {
             var suffix = actionName.GetSuffix("Fill", "GetData", "Get", "Find");
-            suffix += separator;
+            if (!string.IsNullOrWhiteSpace(suffix))
+            {
+                suffix = separator + suffix;
+            }
             return suffix;
         }
 
