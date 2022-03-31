@@ -30,7 +30,7 @@ namespace DatasetRefactor.UI
 
                 tableBuilder.Progress += Builder_Progress;
 
-                var metadata = scanner.Scan();
+                var metadata = scanner.Scan(tableName);
                 var groups = tableBuilder.Build(metadata);
                 var files = codeBuilder.Generate(groups);
 

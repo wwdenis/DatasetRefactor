@@ -36,7 +36,7 @@ namespace DatasetRefactor
                     continue;
                 }
 
-                if (!string.IsNullOrWhiteSpace(tableName) && !string.IsNullOrWhiteSpace(includeTable) && tableName != includeTable)
+                if (!string.IsNullOrWhiteSpace(tableName) && !string.IsNullOrWhiteSpace(includeTable) && !tableName.Contains(includeTable))
                 {
                     continue;
                 }
