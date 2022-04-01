@@ -23,29 +23,31 @@
 
         public #ReturnType# #Name#(#+Parameters##Type# #Name##!.Last#, #!##+#)
         {
+            #?Parameters#
             var parameters = new Dictionary<string, object>
             {
                 #+Parameters#
                 { "@#Name#", #Name# }, 
                 #+#
-            };
-            return this.ExecuteScalar<#ReturnType#>(Sql_#Command#, parameters);
+            };#?#
+            return this.ExecuteScalar<#ReturnType#>(Sql_#Command##?Parameters#, parameters#?#);
         }
     #+#
     #+Select#
 
         public int Fill#Suffix#(#Table#DataTable table#+Parameters#, #Type# #Name##+#)
         {
+            #?Parameters#
             var parameters = new Dictionary<string, object>
             {
                 #+Parameters#
                 { "@#Name#", #Name# },
                 #+#
-            };
-            return this.Fill(table, Sql_#Command#, parameters);
+            };#?#
+            return this.Fill(table, Sql_#Command##?Parameters#, parameters#?#);
         }
 
-        public #ReturnType# GetData#Suffix#(#+Parameters##Type# #Name##!.Last#, #!##+#)
+        public #ReturnType# #Prefix##Suffix#(#+Parameters##Type# #Name##!.Last#, #!##+#)
         {
             var table = new #Table#DataTable();
             this.Fill#Suffix#(table#+Parameters#, #Name##+#);
