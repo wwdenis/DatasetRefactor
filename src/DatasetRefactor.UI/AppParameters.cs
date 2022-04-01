@@ -68,6 +68,11 @@ namespace DatasetRefactor.UI
             result = new Dictionary<string, string[]>();
             error = string.Empty;
 
+            if (string.IsNullOrWhiteSpace(filterFile))
+            {
+                return true;
+            }
+
             var info = new FileInfo(filterFile);
             if (!info.Exists)
             {
