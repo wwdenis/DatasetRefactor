@@ -1,3 +1,4 @@
+using System;
 using System.CodeDom;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
@@ -10,11 +11,19 @@ using FluentAssertions;
 using HashScript;
 using Microsoft.CSharp;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace DatasetRefactor.Tests
 {
-    public class TableGroupBuilderTests
+    public class TableGroupBuilderTests 
     {
+        private readonly ITestOutputHelper output;
+
+        public TableGroupBuilderTests(ITestOutputHelper output)
+        {
+            this.output = output;
+        }
+
         [Fact]
         public void Should_Generate()
         {
@@ -68,7 +77,7 @@ namespace DatasetRefactor.Tests
             return output;
         }
 
-        private static bool TryBuildAssembly(string rootNamespace, string datasetSource, out Assembly assembly)
+        private bool TryBuildAssembly(string rootNamespace, string datasetSource, out Assembly assembly)
         {
             const string SettingsSource =
                 @"namespace MyApp.Properties.Settings {
@@ -87,10 +96,14 @@ namespace DatasetRefactor.Tests
                 "System.Xml.dll",
             };
 
-            var parameters = new CompilerParameters(dependencies, $"{rootNamespace}.dll", true);
+            var outputFile = $"Datasets_{Guid.NewGuid():N}.dll";
+            var parameters = new CompilerParameters(dependencies, outputFile, true);
             var result = csc.CompileAssemblyFromSource(parameters, datasetSource, SettingsSource);
 
             assembly = result.CompiledAssembly;
+
+            output.WriteLine($"Dataset DLL generated {outputFile}");
+
             return !result.Errors.HasErrors;
         }
 
