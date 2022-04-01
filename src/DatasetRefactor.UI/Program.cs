@@ -15,14 +15,18 @@ namespace DatasetRefactor.UI
         {
             try
             {
-                if (!ParseArgs(args, out var assemblyFile, out var targetDir, out var saveSource, out var tableName))
+                var parameters = AppParameters.Parse(args);
+                if (parameters.Errors.Any())
                 {
+                    var error = string.Join(Environment.NewLine, parameters.Errors);
+                    var message = string.Join(Environment.NewLine, "Errors:", error, string.Empty, AppParameters.HelpMessage);
+                    LogError(message);
                     return 1;
                 }
 
-                LogSuccess($"Reading all Datasets from {assemblyFile}");
+                LogSuccess($"Reading all Datasets from {parameters.AssemblyFile}");
 
-                var assembly = Assembly.LoadFrom(assemblyFile);
+                var assembly = Assembly.LoadFrom(parameters.AssemblyFile);
 
                 var scanner = new TypeScanner(assembly);
                 var codeBuilder = new CodeBuilder();
@@ -30,16 +34,16 @@ namespace DatasetRefactor.UI
 
                 tableBuilder.Progress += Builder_Progress;
 
-                var metadata = scanner.Scan(tableName);
+                var metadata = scanner.Scan(parameters.Selected);
                 var groups = tableBuilder.Build(metadata);
                 var files = codeBuilder.Generate(groups);
 
-                if (saveSource == "1")
+                if (parameters.SaveSource)
                 {
-                    SaveStructure(files, targetDir);
+                    SaveStructure(files, parameters.TargetDir);
                 }
 
-                SaveGenerated(files, targetDir);
+                SaveGenerated(files, parameters.TargetDir);
 
                 LogSuccess($"Finished: {files.Count()} Files written");
 
@@ -68,43 +72,6 @@ namespace DatasetRefactor.UI
             };
 
             return JsonConvert.SerializeObject(data, settings);
-        }
-
-        private static bool ParseArgs(string[] args, out string assemblyFile, out string targetDir, out string saveSource, out string tableName)
-        {
-            var errorMessage = string.Empty;
-            assemblyFile = string.Empty;
-            targetDir = string.Empty;
-            saveSource = string.Empty;
-            tableName = string.Empty;
-
-            var parameters = args
-                .Select(i => i.Split('='))
-                .ToDictionary(k => k.ElementAtOrDefault(0), v => v.ElementAtOrDefault(1));
-
-            parameters.TryGetValue("source", out assemblyFile);
-            parameters.TryGetValue("target", out targetDir);
-            parameters.TryGetValue("save", out saveSource);
-            parameters.TryGetValue("table", out tableName);
-
-            if (!File.Exists(assemblyFile))
-            {
-                errorMessage = $"SourceAssembly {assemblyFile} does not exist";
-            }
-
-            if (!Directory.Exists(targetDir))
-            {
-                errorMessage = $"TargetDir {targetDir} does not exist";
-            }
-
-            if (string.IsNullOrWhiteSpace(errorMessage))
-            {
-                return true;
-            }
-
-            errorMessage = $"Error: {errorMessage}\n\nUsage: untier -source=[assembly] -target=[directory] -save=[0/1] -dataset=[name]";
-            LogError(errorMessage);
-            return false;
         }
 
         static void SaveStructure(IEnumerable<TransformFile> allFiles, string targetRoot)

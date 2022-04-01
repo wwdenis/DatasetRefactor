@@ -181,6 +181,7 @@ namespace DatasetRefactor.Tests
             {
                 Name = $"FindBy{keyColumn}",
                 ReturnType = $"{tableName}Row",
+                Prefix = "GetData",
                 Suffix = $"By{keyColumn}",
                 Table = tableName,
                 Command = "FindById",

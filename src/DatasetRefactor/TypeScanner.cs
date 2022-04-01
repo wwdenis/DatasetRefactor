@@ -20,13 +20,20 @@ namespace DatasetRefactor
             this.assembly = assembly;
         }
 
-        public IEnumerable<TypeMetadata> Scan(string includeTable = null)
+        public IEnumerable<TypeMetadata> Scan(Dictionary<string, string[]> selected = null)
         {
+            selected ??= new Dictionary<string, string[]>();
+
             var adapters = this.assembly.FindTypes(AdapterBaseTypes);
             var datasets = this.assembly.FindTypes(DatasetBaseTypes);
             var tables = this.assembly.FindTypes(TableBaseTypes);
 
             var result = new List<TypeMetadata>();
+
+            if (selected.Any())
+            {
+                adapters = adapters.Where(i => selected.ContainsKey(i.Name));
+            }
 
             foreach (var adapterType in adapters)
             {
@@ -36,13 +43,14 @@ namespace DatasetRefactor
                     continue;
                 }
 
-                if (!string.IsNullOrWhiteSpace(tableName) && !string.IsNullOrWhiteSpace(includeTable) && !tableName.Contains(includeTable))
-                {
-                    continue;
-                }
-
                 var datasetType = datasets.SingleOrDefault(i => i.FullName == datasetName);
                 var tableType = datasetType?.GetNestedTypes().SingleOrDefault(i => i.Name == tableName);
+                var selectedMethods = Enumerable.Empty<string>();
+
+                if (selected.TryGetValue(adapterType.Name, out var methods))
+                {
+                    selectedMethods = methods;
+                }
 
                 if (datasetType is not null)
                 {
@@ -54,6 +62,7 @@ namespace DatasetRefactor
                         AdapterName = adapterType.Name,
                         DatasetName = datasetName,
                         TableName = tableName,
+                        SelectedActions = selectedMethods,
                     };
 
                     result.Add(search);

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace DatasetRefactor.Models
 {
@@ -15,5 +16,7 @@ namespace DatasetRefactor.Models
         public string DatasetName { get; set; }
 
         public string TableName { get; set; }
+
+        public IEnumerable<string> SelectedActions { get; set; }
     }
 }

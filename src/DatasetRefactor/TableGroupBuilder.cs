@@ -23,9 +23,9 @@ namespace DatasetRefactor
             {
                 this.OnProgress(item.AdapterName);
 
-                var adapterInfo = BuildAdapter(item.AdapterType);
+                var adapterInfo = BuildAdapter(item);
+                var tableInfo = BuildTable(item);
                 var datasetInfo = new DatasetInfo(item.DatasetType);
-                var tableInfo = BuildTable(item.TableType);
 
                 var tableGroup = new TableGroup
                 {
@@ -42,8 +42,9 @@ namespace DatasetRefactor
             return result;
         }
 
-        private static TableInfo BuildTable(Type type)
+        private static TableInfo BuildTable(TypeMetadata meta)
         {
+            var type = meta.TableType;
             if (type is null)
             {
                 return null;
@@ -104,8 +105,11 @@ namespace DatasetRefactor
             return columns;
         }
 
-        private static AdapterInfo BuildAdapter(Type type)
+        private static AdapterInfo BuildAdapter(TypeMetadata meta)
         {
+            var type = meta.AdapterType;
+            var selected = meta.SelectedActions ?? Enumerable.Empty<string>();
+
             using var manager = SqlManager.Create(type);
             
             var actions = new HashSet<ActionInfo>();
@@ -114,6 +118,7 @@ namespace DatasetRefactor
             var methods = from i in type.GetDeclaredMethods()
                           let parameters = i.GetParameters()
                           where parameters.All(p => p.ParameterType.IsSimple())
+                          && (selected.Any() || selected.Contains(i.Name))
                           select i;
 
             foreach (var method in methods)
@@ -167,10 +172,13 @@ namespace DatasetRefactor
                 actionType = ActionType.Execute;
             }
 
+            SplitAction(actionName, out var prefix, out var suffix);
+
             return new ActionInfo
             {
                 Type = actionType,
-                Suffix = GetSuffix(actionName),
+                Prefix = prefix,
+                Suffix = suffix,
                 Name = actionName,
                 Table = tableName,
                 Command = BuildCommandName(actionType, actionName),
@@ -202,7 +210,12 @@ namespace DatasetRefactor
 
         private static string BuildCommandName(ActionType actionType, string actionName)
         {
-            var suffix = GetSuffix(actionName, "_");
+            SplitAction(actionName, out _, out var suffix);
+
+            if (!string.IsNullOrWhiteSpace(suffix))
+            {
+                suffix = "_" + suffix;
+            }
 
             return actionType switch
             {
@@ -213,14 +226,22 @@ namespace DatasetRefactor
             };
         }
 
-        private static string GetSuffix(string actionName, string separator = "")
+        private static void SplitAction(string actionName, out string actionPrefix, out string actionSuffix)
         {
-            var suffix = actionName.GetSuffix("Fill", "GetData", "Get", "Find");
-            if (!string.IsNullOrWhiteSpace(suffix))
+            var prefixes = new[] { "Fill", "GetData", "Get", "Find" };
+
+            actionPrefix = string.Empty;
+            actionSuffix = string.Empty;
+
+            foreach (var prefix in prefixes)
             {
-                suffix = separator + suffix;
+                if (actionName.HasSuffix(prefix, out var suffix))
+                {
+                    actionPrefix = prefix;
+                    actionSuffix = suffix;
+                    break;
+                }
             }
-            return suffix;
         }
 
         private void OnProgress(string message)
