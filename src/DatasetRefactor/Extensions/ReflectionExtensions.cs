@@ -141,7 +141,8 @@ namespace DatasetRefactor.Extensions
             }
 
             var types = new[]
-            { 
+            {
+                typeof(object),
                 typeof(string),
                 typeof(decimal),
                 typeof(DateTime),
