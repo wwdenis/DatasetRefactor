@@ -2,14 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using DatasetRefactor.Extensions;
 using DatasetRefactor.Models;
 using HashScript;
 using HashScript.Providers;
 
 namespace DatasetRefactor
 {
-    public class CodeBuilder
+    public class FileRenderer
     {
         public IEnumerable<TransformFile> Generate(IEnumerable<TableGroup> groups)
         {
@@ -98,7 +97,7 @@ namespace DatasetRefactor
 
         private static string ReadTemplate(string templateName, string templateDir)
         {
-            var assembly = typeof(CodeBuilder).Assembly;
+            var assembly = typeof(FileRenderer).Assembly;
             var assemblyName = assembly.GetName().Name;
             var fragments = new[] { assemblyName, "Templates", templateDir, templateName, "hz" };
             var templatePath = string.Join(".", fragments.Where(i => i != null));

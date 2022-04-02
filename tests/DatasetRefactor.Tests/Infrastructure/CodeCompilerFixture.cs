@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.CodeDom;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
@@ -11,49 +11,43 @@ using FluentAssertions;
 using HashScript;
 using HashScript.Providers;
 using Microsoft.CSharp;
-using Xunit;
-using Xunit.Abstractions;
 
-namespace DatasetRefactor.Tests
+namespace DatasetRefactor.Tests.Infrastructure
 {
-    public class TableGroupBuilderTests 
+    internal sealed class CodeCompilerFixture : IDisposable
     {
-        private readonly ITestOutputHelper output;
+        private readonly string rootNamespace;
+        private readonly string datasetName;
+        private readonly string outputFile;
 
-        public TableGroupBuilderTests(ITestOutputHelper output)
+        public CodeCompilerFixture(string rootNamespace, string datasetName)
         {
-            this.output = output;
+            this.rootNamespace = rootNamespace;
+            this.datasetName = datasetName;
+            this.outputFile = $"Datasets_{Guid.NewGuid():N}.dll";
         }
 
-        [Fact]
-        public void Should_Generate()
+        public void Dispose()
         {
-            const string RootNamespace = "EmployeeTest";
-            const string DatasetName = "HumanResourcesDS";
-            const string TableName = "Employee";
-            const string KeyColumn = "Id";
-            var columns = new Dictionary<string, string>
+            var files = new[]
             {
-                { "Id", "int" },
-                { "Name", "string" },
+                this.outputFile,
+                Path.ChangeExtension(this.outputFile, "pdb"),
             };
 
+            foreach (var file in files)
+            {
+                if (File.Exists(file))
+                {
+                    File.Delete(file);
+                }
+            }
+        }
 
-            var expectedResult = BuildTableGroup(RootNamespace, DatasetName, TableName, KeyColumn, columns);
-            var sourceCode = BuildDatasetCode(RootNamespace, DatasetName, TableName, KeyColumn, columns);
-            var success = TryBuildAssembly(RootNamespace, sourceCode, out var assembly);
-
-            success.Should().BeTrue();
-
-            var scanner = new TypeScanner(assembly);
-            var metadata = scanner.Scan();
-
-            var subject = new TableGroupBuilder();
-            var result = subject.Build(metadata);
-
-            result
-                .Should()
-                .BeEquivalentTo(expectedResult);
+        public Assembly CompileDataset(string tableName, string keyColumn, Dictionary<string, string> columns)
+        {
+            var sourceCode = BuildDatasetCode(this.rootNamespace, this.datasetName, tableName, keyColumn, columns);
+            return TryBuildAssembly(this.rootNamespace, sourceCode);
         }
 
         static string BuildDatasetCode(string rootNamespace, string datasetName, string tableName, string keyColumn, Dictionary<string, string> columns)
@@ -61,7 +55,7 @@ namespace DatasetRefactor.Tests
             var datasetInfo = BuildDatasetData(datasetName, tableName, keyColumn, columns);
 
             var valueProvider = new DictionaryValueProvider(datasetInfo);
-            var templateContents = File.ReadAllText(@"Samples\DatasetSchema.hz");
+            var templateContents = File.ReadAllText(@"Infrastructure\DatasetSchema.hz");
             var templateRenderer = new Renderer(templateContents);
             var schema = templateRenderer.Generate(valueProvider);
 
@@ -79,7 +73,7 @@ namespace DatasetRefactor.Tests
             return output;
         }
 
-        private bool TryBuildAssembly(string rootNamespace, string datasetSource, out Assembly assembly)
+        private Assembly TryBuildAssembly(string rootNamespace, string datasetSource)
         {
             const string SettingsSource =
                 @"namespace MyApp.Properties.Settings {
@@ -98,15 +92,15 @@ namespace DatasetRefactor.Tests
                 "System.Xml.dll",
             };
 
-            var outputFile = $"Datasets_{Guid.NewGuid():N}.dll";
-            var parameters = new CompilerParameters(dependencies, outputFile, true);
+            var parameters = new CompilerParameters(dependencies, this.outputFile, true);
             var result = csc.CompileAssemblyFromSource(parameters, datasetSource, SettingsSource);
 
-            assembly = result.CompiledAssembly;
+            if (result.Errors.HasErrors)
+            {
+                return null;
+            }
 
-            output.WriteLine($"Dataset DLL generated {outputFile}");
-
-            return !result.Errors.HasErrors;
+            return result.CompiledAssembly;
         }
 
         static Dictionary<string, object> BuildDatasetData(string datasetName, string tableName, string keyColumn, Dictionary<string, string> columns)
@@ -147,7 +141,7 @@ namespace DatasetRefactor.Tests
             };
         }
 
-        private TableGroup[] BuildTableGroup(string rootNamespace, string datasetName, string tableName, string keyColumn, Dictionary<string, string> columns)
+        public TableGroup[] BuildTableGroup(string tableName, string keyColumn, Dictionary<string, string> columns)
         {
             var columnInfo = from i in columns
                              let propertyName = i.Key.Contains(" ") ? i.Key.Replace(" ", "_") : ""
@@ -213,20 +207,20 @@ namespace DatasetRefactor.Tests
                 {
                     Dataset = new DatasetInfo
                     {
-                        Name = datasetName,
-                        Namespace = rootNamespace,
+                        Name = this.datasetName,
+                        Namespace = this.rootNamespace,
                     },
                     Table = new TableInfo
                     {
                         Name = tableName,
-                        Namespace = string.Join(".", rootNamespace, datasetName),
+                        Namespace = string.Join(".", this.rootNamespace, this.datasetName),
                         Columns = columnInfo,
                         Actions = new[] { findAction },
                     },
                     Adapter = new AdapterInfo
                     {
                         Name = tableName + "TableAdapter",
-                        Namespace = string.Join("", rootNamespace, ".", datasetName, "TableAdapters"),
+                        Namespace = string.Join("", this.rootNamespace, ".", this.datasetName, "TableAdapters"),
                         Commands = adapterCommands,
                         Insert = BuildAction(ActionType.Insert, "Insert", "", "Insert", "int", tableName, insertParameters),
                         Delete = BuildAction(ActionType.Delete, "Delete", "", "Delete", "int", tableName, deleteParameters),

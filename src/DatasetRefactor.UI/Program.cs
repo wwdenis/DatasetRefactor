@@ -29,14 +29,14 @@ namespace DatasetRefactor.UI
                 var assembly = Assembly.LoadFrom(parameters.AssemblyFile);
 
                 var scanner = new TypeScanner(assembly);
-                var codeBuilder = new CodeBuilder();
-                var tableBuilder = new TableGroupBuilder();
+                var fileRenderer = new FileRenderer();
+                var tableBuilder = new TableBuilder();
 
                 tableBuilder.Progress += Builder_Progress;
 
                 var metadata = scanner.Scan(parameters.Selected);
                 var groups = tableBuilder.Build(metadata);
-                var files = codeBuilder.Generate(groups);
+                var files = fileRenderer.Generate(groups);
 
                 if (parameters.SaveSource)
                 {

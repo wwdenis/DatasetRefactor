@@ -9,7 +9,7 @@ using DatasetRefactor.Models;
 
 namespace DatasetRefactor
 {
-    public class TableGroupBuilder
+    public class TableBuilder
     {
         public event EventHandler<string> Progress;
 
