@@ -181,7 +181,7 @@ namespace DatasetRefactor.Tests
             {
                 Name = $"FindBy{keyColumn}",
                 ReturnType = $"{tableName}Row",
-                Prefix = "GetData",
+                Prefix = "Find",
                 Suffix = $"By{keyColumn}",
                 Table = tableName,
                 Command = "FindById",
@@ -226,12 +226,12 @@ namespace DatasetRefactor.Tests
                         Name = tableName + "TableAdapter",
                         Namespace = string.Join("", rootNamespace, ".", datasetName, "TableAdapters"),
                         Commands = adapterCommands,
-                        Insert = BuildAction(ActionType.Insert, "Insert", "Insert", "int", tableName, insertParameters),
-                        Delete = BuildAction(ActionType.Delete, "Delete", "Delete", "int", tableName, deleteParameters),
-                        Update = BuildAction(ActionType.Update, "Update", "Update", "int", tableName, updateParameters),
+                        Insert = BuildAction(ActionType.Insert, "Insert", "", "Insert", "int", tableName, insertParameters),
+                        Delete = BuildAction(ActionType.Delete, "Delete", "", "Delete", "int", tableName, deleteParameters),
+                        Update = BuildAction(ActionType.Update, "Update", "", "Update", "int", tableName, updateParameters),
                         Select = new[]
                         {
-                            BuildAction(ActionType.Select, "GetData", "Select", $"{tableName}DataTable", tableName)
+                            BuildAction(ActionType.Select, "GetData", "GetData", "Select", $"{tableName}DataTable", tableName)
                         },
                         Scalar = new ActionInfo[0],
                     }
@@ -240,13 +240,14 @@ namespace DatasetRefactor.Tests
             };
         }
 
-        static ActionInfo BuildAction(ActionType type, string name, string command, string returnType, string tableName, IEnumerable<ActionParameter> parameters = null)
+        static ActionInfo BuildAction(ActionType type, string name, string prefix, string command, string returnType, string tableName, IEnumerable<ActionParameter> parameters = null)
         {
             return new ActionInfo
             {
                 Type = type,
                 Name = name,
                 Command = command,
+                Prefix = prefix,
                 Suffix = "",
                 ReturnType = returnType,
                 Table = tableName,

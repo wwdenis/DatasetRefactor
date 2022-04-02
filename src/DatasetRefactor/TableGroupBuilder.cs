@@ -118,7 +118,7 @@ namespace DatasetRefactor
             var methods = from i in type.GetDeclaredMethods()
                           let parameters = i.GetParameters()
                           where parameters.All(p => p.ParameterType.IsSimple())
-                          && (selected.Any() || selected.Contains(i.Name))
+                          && (!selected.Any() || selected.Contains(i.Name))
                           select i;
 
             foreach (var method in methods)
