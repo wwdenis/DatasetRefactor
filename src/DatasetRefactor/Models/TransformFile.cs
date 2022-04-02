@@ -11,7 +11,7 @@ namespace DatasetRefactor.Models
 
         public string Contents { get; set; }
 
-        public Dictionary<string, object> Source { get; set; }
+        public object Source { get; set; }
         
         public string Adapter { get; set; }
 

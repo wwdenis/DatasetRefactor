@@ -1,6 +1,5 @@
 ﻿using System;
 using System.CodeDom;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -155,47 +154,6 @@ namespace DatasetRefactor.Extensions
             return type.IsPrimitive
               || type.IsEnum
               || types.Contains(type);
-        }
-
-        public static Dictionary<string, object> ToDictionary(this object instance)
-        {
-            var type = instance.GetType();
-            var props = type.GetProperties(DeclaredMembers);
-            var result = new Dictionary<string, object>();
-
-            if (type.IsSimple())
-            {
-                return null;
-            }
-
-            foreach (var prop in props)
-            {
-                var value = prop.GetValue(instance);
-
-                if (value is not null && !prop.PropertyType.IsSimple())
-                {
-                    if (value is IEnumerable collection)
-                    {
-                        var list = new List<Dictionary<string, object>>();
-                    
-                        foreach (var item in collection)
-                        {
-                            var itemData = item.ToDictionary();
-                            list.Add(itemData);
-                        }
-
-                        value = list;
-                    }
-                    else
-                    {
-                        value = value.ToDictionary();
-                    }
-                }
-
-                result.Add(prop.Name, value);
-            }
-
-            return result;
         }
     }
 }

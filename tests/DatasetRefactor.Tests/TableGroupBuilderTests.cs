@@ -9,6 +9,7 @@ using System.Reflection;
 using DatasetRefactor.Models;
 using FluentAssertions;
 using HashScript;
+using HashScript.Providers;
 using Microsoft.CSharp;
 using Xunit;
 using Xunit.Abstractions;
@@ -59,9 +60,10 @@ namespace DatasetRefactor.Tests
         {
             var datasetInfo = BuildDatasetData(datasetName, tableName, keyColumn, columns);
 
+            var valueProvider = new DictionaryValueProvider(datasetInfo);
             var templateContents = File.ReadAllText(@"Samples\DatasetSchema.hz");
-            var templateWriter = new Writer(templateContents);
-            var schema = templateWriter.Generate(datasetInfo);
+            var templateRenderer = new Renderer(templateContents);
+            var schema = templateRenderer.Generate(valueProvider);
 
             var root = new CodeNamespace(rootNamespace);
             var unit = new CodeCompileUnit();

@@ -5,6 +5,7 @@ using System.Linq;
 using DatasetRefactor.Extensions;
 using DatasetRefactor.Models;
 using HashScript;
+using HashScript.Providers;
 
 namespace DatasetRefactor
 {
@@ -80,16 +81,16 @@ namespace DatasetRefactor
 
         private static TransformFile RenderFile(TableGroup group, string template, string targetFile, string targetDir)
         {
-            var source = group.ToDictionary();
-            var writer = new Writer(template);
-            var generated = writer.Generate(source);
+            var provider = new ObjectValueProvider(group);
+            var renderer = new Renderer(template);
+            var generated = renderer.Generate(provider);
 
             return new TransformFile
             {
                 Name = targetFile,
                 Directory = targetDir,
                 Contents = generated,
-                Source = source,
+                Source = group,
                 Adapter = group.Adapter.Name,
                 IsBase = string.IsNullOrEmpty(targetDir),
             };
