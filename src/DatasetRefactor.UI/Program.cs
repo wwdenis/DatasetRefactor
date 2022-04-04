@@ -11,108 +11,111 @@ namespace DatasetRefactor.UI
 {
     class Program
     {
+        private const int CodeSuccess = 0;
+        private const int CodeParameterError = 1;
+        private const int CodeUnknownError = 2;
+
+        private static string currentDataset = string.Empty;
+
         static int Main(string[] args)
         {
             try
             {
+                currentDataset = null;
+
                 var parameters = AppParameters.Parse(args);
                 if (parameters.Errors.Any())
                 {
-                    var error = string.Join(Environment.NewLine, parameters.Errors);
-                    var message = string.Join(Environment.NewLine, "Errors:", error, string.Empty, AppParameters.HelpMessage);
-                    LogError(message);
-                    return 1;
+                    LogError(parameters.Errors);
+                    return CodeParameterError;
                 }
 
-                LogSuccess($"Reading all Datasets from {parameters.AssemblyFile}");
+                LogSuccess("Reading all Datasets");
+                LogSuccess($"Assembly: {parameters.AssemblyFile}");
+                var files = GenerateFiles(parameters);
 
-                var assembly = Assembly.LoadFrom(parameters.AssemblyFile);
+                LogText();
+                SaveFiles(files, parameters);
 
-                var scanner = new TypeScanner(assembly);
-                var fileRenderer = new FileRenderer();
-                var tableBuilder = new TableBuilder();
-
-                tableBuilder.Progress += Builder_Progress;
-
-                var metadata = scanner.Scan(parameters.Selected);
-                var groups = tableBuilder.Build(metadata);
-                var files = fileRenderer.Generate(groups);
-
-                if (parameters.SaveSource)
-                {
-                    SaveStructure(files, parameters.TargetDir);
-                }
-
-                SaveGenerated(files, parameters.TargetDir);
-
+                LogText();
                 LogSuccess($"Finished: {files.Count()} Files written");
 
-                return 0;
+                return CodeSuccess;
             }
             catch (Exception ex)
             {
                 LogError(ex.ToString());
-                return 2;
+                return CodeUnknownError;
             }
         }
 
-        private static void Builder_Progress(object sender, string message)
+        private static IEnumerable<TransformFile> GenerateFiles(AppParameters parameters)
         {
-            Log(message);
+            var assembly = Assembly.LoadFrom(parameters.AssemblyFile);
+
+            var scanner = new TypeScanner(assembly);
+            var tableBuilder = new TableBuilder();
+            var fileRenderer = new FileRenderer();
+            
+            tableBuilder.Progress += Builder_Progress;
+
+            var metadata = scanner.Scan(parameters.Selected);
+            var groups = tableBuilder.Build(metadata);
+            var files = fileRenderer.Generate(groups);
+
+            return files;
         }
 
-        static string Serialize(object data)
+        private static void Builder_Progress(object sender, TypeMetadata metadata)
         {
-            var settings = new JsonSerializerSettings
+            if (currentDataset != metadata.DatasetName)
             {
-                Formatting = Formatting.Indented,
-                NullValueHandling = NullValueHandling.Ignore,
-                DefaultValueHandling = DefaultValueHandling.Ignore,
-                Converters = new[] { new StringEnumConverter() }
-            };
+                currentDataset = metadata.DatasetName;
+                LogText();
+                LogText(currentDataset);
+            }
 
-            return JsonConvert.SerializeObject(data, settings);
+            LogText(metadata.AdapterName, true);
         }
 
-        static void SaveStructure(IEnumerable<TransformFile> allFiles, string targetRoot)
+        static void SaveFiles(IEnumerable<TransformFile> files, AppParameters parameters)
         {
-            Console.CursorTop++;
-            Console.WriteLine("Saving Structure:");
-            Console.CursorTop++;
+            LogSuccess("Saving Structure:");
 
-            var files = allFiles
-                .Where(i => !i.IsBase)
-                .GroupBy(p => p.Adapter)
-                .Select(g => g.First());
+            var currentDir = string.Empty;
 
             foreach (var file in files)
             {
-                var fileName = Path.ChangeExtension(file.Adapter, "json");
-                var path = BuildPath(fileName, targetRoot, "Sources", file.Directory);
-                var json = Serialize(file.Source);
+                SaveFile(file, parameters);
 
-                File.WriteAllText(path, json);
-                Console.WriteLine(path);
+                if (currentDir != file.Directory)
+                {
+                    currentDir = file.Directory;
+                    LogText();
+                    LogText(currentDir);
+                }
+
+                LogText(file.Name, true);
             }
-
-            Console.CursorTop++;
         }
 
-        private static void SaveGenerated(IEnumerable<TransformFile> files, string targetRoot)
+        private static void SaveFile(TransformFile file, AppParameters parameters)
         {
-            Console.CursorTop++;
-            Console.WriteLine("Saving Generated:");
-            Console.CursorTop++;
+            var codePath = BuildPath(file.Name, parameters.TargetDir, "Generated", file.Directory);
+            var codeContents = file.Contents;
+            File.WriteAllText(codePath, codeContents);
 
-            foreach (var file in files)
+            if (parameters.SaveSource)
             {
-                var path = BuildPath(file.Name, targetRoot, "Generated", file.Directory);
+                var jsonFile = Path.ChangeExtension(file.Adapter, "json");
+                var jsonPath = BuildPath(jsonFile, parameters.TargetDir, "Sources", file.Directory);
+                var jsonContents = Serialize(file.Source);
 
-                File.WriteAllText(path, file.Contents);
-                Console.WriteLine(path);
+                if (!File.Exists(jsonPath))
+                {
+                    File.WriteAllText(jsonPath, jsonContents);
+                }
             }
-
-            Console.CursorTop++;
         }
 
         private static string BuildPath(string fileName, params string[] dirs)
@@ -133,6 +136,19 @@ namespace DatasetRefactor.UI
             return Path.Combine(path, fileName);
         }
 
+        static string Serialize(object data)
+        {
+            var settings = new JsonSerializerSettings
+            {
+                Formatting = Formatting.Indented,
+                NullValueHandling = NullValueHandling.Ignore,
+                DefaultValueHandling = DefaultValueHandling.Ignore,
+                Converters = new[] { new StringEnumConverter() }
+            };
+
+            return JsonConvert.SerializeObject(data, settings);
+        }
+
         private static void LogSuccess(string message)
         {
             Console.ForegroundColor = ConsoleColor.Green;
@@ -140,15 +156,23 @@ namespace DatasetRefactor.UI
             Console.ResetColor();
         }
 
-        private static void LogError(string message)
+        private static void LogError(params string[] errors)
         {
+            var error = string.Join(Environment.NewLine, errors);
+            var message = string.Join(Environment.NewLine, "Errors:", error, string.Empty, AppParameters.HelpMessage);
+
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine(message);
             Console.ResetColor();
         }
 
-        private static void Log(string message)
+        private static void LogText(string message = "", bool indent = false)
         {
+            if (indent)
+            {
+                message = "   " + message;
+            }
+
             Console.WriteLine(message);
         }
     }

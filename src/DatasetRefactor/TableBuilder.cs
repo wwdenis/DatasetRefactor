@@ -11,17 +11,16 @@ namespace DatasetRefactor
 {
     public class TableBuilder
     {
-        public event EventHandler<string> Progress;
+        public event EventHandler<TypeMetadata> Progress;
 
         public IEnumerable<TableGroup> Build(IEnumerable<TypeMetadata> metadata)
         {
-            this.OnProgress($"Starting Reading Datasets");
-
             var result = new List<TableGroup>();
+            
 
             foreach (var item in metadata)
             {
-                this.OnProgress(item.AdapterName);
+                this.OnProgress(item);
 
                 var adapterInfo = BuildAdapter(item);
                 var tableInfo = BuildTable(item);
@@ -36,8 +35,6 @@ namespace DatasetRefactor
 
                 result.Add(tableGroup);
             }
-
-            this.OnProgress($"Finished Reading Datasets");
 
             return result;
         }
@@ -244,9 +241,9 @@ namespace DatasetRefactor
             }
         }
 
-        private void OnProgress(string message)
+        private void OnProgress(TypeMetadata metadata)
         {
-            this.Progress?.Invoke(this, message);
+            this.Progress?.Invoke(this, metadata);
         }
     }
 }

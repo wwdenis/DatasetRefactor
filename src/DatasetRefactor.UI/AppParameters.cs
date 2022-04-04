@@ -18,7 +18,7 @@ namespace DatasetRefactor.UI
 
         public Dictionary<string, string[]> Selected { get; set; }
 
-        public IEnumerable<string> Errors { get; set; }
+        public string[] Errors { get; set; }
 
         public static AppParameters Parse(string[] args)
         {
@@ -58,7 +58,7 @@ namespace DatasetRefactor.UI
                 AssemblyFile = assemblyFile,
                 TargetDir = targetDir,
                 SaveSource = saveSource == "1",
-                Errors = errors,
+                Errors = errors.ToArray(),
                 Selected = selected,
             };
         }
