@@ -37,14 +37,22 @@ namespace DatasetRefactor.UI
             parameters.TryGetValue("save", out saveSource);
             parameters.TryGetValue("filter", out filterFile);
 
-            if (!File.Exists(assemblyFile))
+            if (string.IsNullOrWhiteSpace(assemblyFile))
             {
-                errors.Add($"SourceAssembly {assemblyFile} does not exist");
+                errors.Add($"Parameter -Source is mandatory");
+            }
+            else if (!File.Exists(assemblyFile))
+            {
+                errors.Add($"Source Assembly [{assemblyFile}] does not exist");
             }
 
-            if (!Directory.Exists(targetDir))
+            if (string.IsNullOrWhiteSpace(targetDir))
             {
-                errors.Add($"TargetDir {targetDir} does not exist");
+                errors.Add($"Parameter -Target is mandatory");
+            }
+            else if (!Directory.Exists(targetDir))
+            {
+                errors.Add($"Target Dirrectory [{targetDir}] does not exist");
             }
 
             var hasFilter = TryReadFilter(filterFile, out var error, out var selected);
