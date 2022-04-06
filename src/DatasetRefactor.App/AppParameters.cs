@@ -4,11 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace DatasetRefactor.UI
+namespace DatasetRefactor.App
 {
     internal class AppParameters
     {
-        public const string HelpMessage = "Usage: untier -source=[assembly] -target=[directory] -save=[0/1] -dataset=[name]";
+        public const string HelpMessage = "Usage: DatasetRefactor source=[assembly] target=[directory] save=[0/1] filter=[filterFile]";
 
         public string AssemblyFile { get; set; }
 
@@ -39,7 +39,7 @@ namespace DatasetRefactor.UI
 
             if (string.IsNullOrWhiteSpace(assemblyFile))
             {
-                errors.Add($"Parameter -Source is mandatory");
+                errors.Add($"Parameter Source is mandatory");
             }
             else if (!File.Exists(assemblyFile))
             {
@@ -48,11 +48,11 @@ namespace DatasetRefactor.UI
 
             if (string.IsNullOrWhiteSpace(targetDir))
             {
-                errors.Add($"Parameter -Target is mandatory");
+                errors.Add($"Parameter Target is mandatory");
             }
             else if (!Directory.Exists(targetDir))
             {
-                errors.Add($"Target Dirrectory [{targetDir}] does not exist");
+                errors.Add($"Target Directory [{targetDir}] does not exist");
             }
 
             var hasFilter = TryReadFilter(filterFile, out var error, out var selected);
@@ -84,13 +84,13 @@ namespace DatasetRefactor.UI
             var info = new FileInfo(filterFile);
             if (!info.Exists)
             {
-                error = $"FilterFile {filterFile} does not exist";
+                error = $"Filter File [{filterFile}] does not exist";
                 return false;
             }
             
             if (info.Length > Math.Pow(2, 20))
             {
-                error = "FilterFile cannot be bigger than 1MB";
+                error = "Filter File cannot be larger than 1MB";
                 return false;
             }
 

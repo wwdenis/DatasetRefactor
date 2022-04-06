@@ -7,7 +7,7 @@ using DatasetRefactor.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace DatasetRefactor.UI
+namespace DatasetRefactor.App
 {
     class Program
     {
