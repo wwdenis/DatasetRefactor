@@ -91,7 +91,6 @@ namespace DatasetRefactor
                 Contents = generated,
                 Source = group,
                 Adapter = group.Adapter.Name,
-                IsBase = string.IsNullOrEmpty(targetDir),
             };
         }
 

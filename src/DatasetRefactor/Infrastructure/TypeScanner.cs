@@ -67,7 +67,7 @@ namespace DatasetRefactor.Infrastructure
             return result;
         }
 
-        public static bool FindEntities(Type adapterType, out string datasetName, out string tableName)
+        private static bool FindEntities(Type adapterType, out string datasetName, out string tableName)
         {
             datasetName = string.Empty;
             tableName = string.Empty;

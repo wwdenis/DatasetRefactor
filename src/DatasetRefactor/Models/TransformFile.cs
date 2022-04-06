@@ -14,7 +14,5 @@ namespace DatasetRefactor.Models
         public TableGroup Source { get; set; }
         
         public string Adapter { get; set; }
-
-        public bool IsBase { get; set; }
     }
 }
