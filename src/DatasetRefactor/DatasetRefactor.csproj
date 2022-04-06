@@ -1,8 +1,25 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net472</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>Latest</LangVersion>
+    <AssemblyName>DatasetRefactor</AssemblyName>
+    <PackageId>DatasetRefactor</PackageId>
+    <Product>DatasetRefactor</Product>
+    <Title>DatasetRefactor</Title>
+    <Version>0.0.1</Version>
+    <AssemblyVersion>0.0.1</AssemblyVersion>
+    <PackageVersion>0.0.1</PackageVersion>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Authors>Denis Da Silva</Authors>
+    <Company>Denis Da Silva</Company>
+    <Copyright>Copyright © Denis Silva Da Silva 2022</Copyright>
+    <PackageTags>Dataset;Database;POCO;ORM;Refactor</PackageTags>
+    <Description>
+      DatasetRefactor translates Typed Datasets into Plain code.
+    </Description>
+    <RepositoryUrl>https://github.com/wwdenis/DatasetRefactor/</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,6 +28,10 @@
 
   <ItemGroup>
     <PackageReference Include="HashScript" Version="0.0.2" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="System.CodeDom" Version="6.0.0" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.3" />
   </ItemGroup>
 
 </Project>
