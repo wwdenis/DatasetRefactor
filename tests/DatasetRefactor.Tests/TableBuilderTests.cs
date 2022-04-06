@@ -1,16 +1,6 @@
-using System;
-using System.CodeDom;
-using System.CodeDom.Compiler;
 using System.Collections.Generic;
-using System.Data.Design;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using DatasetRefactor.Models;
 using DatasetRefactor.Tests.Infrastructure;
 using FluentAssertions;
-using HashScript;
-using Microsoft.CSharp;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -45,11 +35,8 @@ namespace DatasetRefactor.Tests
 
             assembly.Should().NotBeNull();
 
-            var scanner = new TypeScanner(assembly);
-            var metadata = scanner.Scan();
-
-            var subject = new TableBuilder();
-            var result = subject.Build(metadata);
+            var subject = new TableBuilder(assembly);
+            var result = subject.Build();
 
             result
                 .Should()

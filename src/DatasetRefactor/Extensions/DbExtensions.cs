@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace DatasetRefactor.Extensions
 {
-    public static class DbExtensions
+    internal static class DbExtensions
     {
         public static IEnumerable<IDbCommand> GetDataCommands(this IDbDataAdapter adapter)
         {

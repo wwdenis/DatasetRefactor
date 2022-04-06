@@ -53,14 +53,12 @@ namespace DatasetRefactor.App
         {
             var assembly = Assembly.LoadFrom(parameters.AssemblyFile);
 
-            var scanner = new TypeScanner(assembly);
-            var tableBuilder = new TableBuilder();
+            var tabelFilter = parameters.Selected.Select(i => new TableFilter(i.Key, i.Value));
             var fileRenderer = new FileRenderer();
-            
+            var tableBuilder = new TableBuilder(assembly);
             tableBuilder.Progress += Builder_Progress;
 
-            var metadata = scanner.Scan(parameters.Selected);
-            var groups = tableBuilder.Build(metadata);
+            var groups = tableBuilder.Build(tabelFilter);
             var files = fileRenderer.Generate(groups);
 
             return files;

@@ -11,12 +11,20 @@ namespace DatasetRefactor
 {
     public class TableBuilder
     {
+        private readonly Assembly assembly;
+
         public event EventHandler<TypeMetadata> Progress;
 
-        public IEnumerable<TableGroup> Build(IEnumerable<TypeMetadata> metadata)
+        public TableBuilder(Assembly assembly)
         {
+            this.assembly = assembly;
+        }
+
+        public IEnumerable<TableGroup> Build(IEnumerable<TableFilter> filter = null)
+        {
+            var scanner = new TypeScanner(this.assembly);
+            var metadata = scanner.Scan(filter);
             var result = new List<TableGroup>();
-            
 
             foreach (var item in metadata)
             {

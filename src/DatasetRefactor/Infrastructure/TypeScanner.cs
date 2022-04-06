@@ -6,9 +6,9 @@ using System.Text.RegularExpressions;
 using DatasetRefactor.Extensions;
 using DatasetRefactor.Models;
 
-namespace DatasetRefactor
+namespace DatasetRefactor.Infrastructure
 {
-    public class TypeScanner
+    internal sealed class TypeScanner
     {
         private static readonly string[] DatasetBaseTypes = new[] { "System.Data.DataSet" };
         private static readonly string[] TableBaseTypes = new[] { "System.Data.TypedTableBase`1", "System.Data.DataTable" };
@@ -20,9 +20,9 @@ namespace DatasetRefactor
             this.assembly = assembly;
         }
 
-        public IEnumerable<TypeMetadata> Scan(Dictionary<string, string[]> selected = null)
+        public IEnumerable<TypeMetadata> Scan(IEnumerable<TableFilter> filter = null)
         {
-            selected ??= new Dictionary<string, string[]>();
+            filter ??= Enumerable.Empty<TableFilter>();
 
             var adapters = this.assembly.FindTypes(AdapterBaseTypes);
             var datasets = this.assembly.FindTypes(DatasetBaseTypes);
@@ -30,13 +30,14 @@ namespace DatasetRefactor
 
             var result = new List<TypeMetadata>();
 
-            if (selected.Any())
-            {
-                adapters = adapters.Where(i => selected.ContainsKey(i.Name));
-            }
-
             foreach (var adapterType in adapters)
             {
+                var selected = filter.FirstOrDefault(i => string.Equals(i.Name, adapterType.Name, StringComparison.OrdinalIgnoreCase));
+                if (filter.Any() && selected is null)
+                {
+                    continue;
+                }
+
                 var found = FindEntities(adapterType, out var datasetName, out var tableName);
                 if (!found)
                 {
@@ -45,12 +46,6 @@ namespace DatasetRefactor
 
                 var datasetType = datasets.SingleOrDefault(i => i.FullName == datasetName);
                 var tableType = datasetType?.GetNestedTypes().SingleOrDefault(i => i.Name == tableName);
-                var selectedMethods = Enumerable.Empty<string>();
-
-                if (selected.TryGetValue(adapterType.Name, out var methods))
-                {
-                    selectedMethods = methods;
-                }
 
                 if (datasetType is not null)
                 {
@@ -62,7 +57,7 @@ namespace DatasetRefactor
                         AdapterName = adapterType.Name,
                         DatasetName = datasetName,
                         TableName = tableName,
-                        SelectedActions = selectedMethods,
+                        SelectedActions = selected?.Actions,
                     };
 
                     result.Add(search);
