@@ -6,7 +6,8 @@ using System.Data.Design;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using DatasetRefactor.Models;
+using DatasetRefactor.Entities;
+using DatasetRefactor.Metadata;
 using FluentAssertions;
 using HashScript;
 using HashScript.Providers;
@@ -141,7 +142,7 @@ namespace DatasetRefactor.Tests.Infrastructure
             };
         }
 
-        public TableGroup[] BuildTableGroup(string tableName, string keyColumn, Dictionary<string, string> columns)
+        public ScanResult BuildScanResult(string tableName, string keyColumn, Dictionary<string, string> columns)
         {
             var columnInfo = from i in columns
                              let propertyName = i.Key.Contains(" ") ? i.Key.Replace(" ", "_") : ""
@@ -201,38 +202,41 @@ namespace DatasetRefactor.Tests.Infrastructure
                                       Name = $"{i}",
                                   };
 
-            return new[]
+            var info = new ScanInfo
             {
-                new TableGroup
+                Dataset = new DatasetInfo
                 {
-                    Dataset = new DatasetInfo
+                    Name = this.datasetName,
+                    Namespace = this.rootNamespace,
+                },
+                Table = new TableInfo
+                {
+                    Name = tableName,
+                    Namespace = string.Join(".", this.rootNamespace, this.datasetName),
+                    Columns = columnInfo,
+                    Actions = new[] { findAction },
+                },
+                Adapter = new AdapterInfo
+                {
+                    Name = tableName + "TableAdapter",
+                    Namespace = string.Join("", this.rootNamespace, ".", this.datasetName, "TableAdapters"),
+                    Commands = adapterCommands,
+                    Insert = BuildAction(ActionType.Insert, "Insert", "", "Insert", "int", tableName, insertParameters),
+                    Delete = BuildAction(ActionType.Delete, "Delete", "", "Delete", "int", tableName, deleteParameters),
+                    Update = BuildAction(ActionType.Update, "Update", "", "Update", "int", tableName, updateParameters),
+                    Select = new[]
                     {
-                        Name = this.datasetName,
-                        Namespace = this.rootNamespace,
+                        BuildAction(ActionType.Select, "GetData", "GetData", "Select", $"{tableName}DataTable", tableName)
                     },
-                    Table = new TableInfo
-                    {
-                        Name = tableName,
-                        Namespace = string.Join(".", this.rootNamespace, this.datasetName),
-                        Columns = columnInfo,
-                        Actions = new[] { findAction },
-                    },
-                    Adapter = new AdapterInfo
-                    {
-                        Name = tableName + "TableAdapter",
-                        Namespace = string.Join("", this.rootNamespace, ".", this.datasetName, "TableAdapters"),
-                        Commands = adapterCommands,
-                        Insert = BuildAction(ActionType.Insert, "Insert", "", "Insert", "int", tableName, insertParameters),
-                        Delete = BuildAction(ActionType.Delete, "Delete", "", "Delete", "int", tableName, deleteParameters),
-                        Update = BuildAction(ActionType.Update, "Update", "", "Update", "int", tableName, updateParameters),
-                        Select = new[]
-                        {
-                            BuildAction(ActionType.Select, "GetData", "GetData", "Select", $"{tableName}DataTable", tableName)
-                        },
-                        Scalar = new ActionInfo[0],
-                    }
-
+                    Scalar = new ActionInfo[0],
                 }
+            };
+
+            return new ScanResult
+            {
+                Root = new RootInfo(this.rootNamespace),
+                Items = new[] { info },
+                Errors = Enumerable.Empty<string>(),
             };
         }
 

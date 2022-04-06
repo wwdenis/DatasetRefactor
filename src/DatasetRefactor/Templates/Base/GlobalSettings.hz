@@ -1,4 +1,4 @@
-﻿#+Dataset#namespace #Namespace##+#
+﻿#+Root#namespace #Namespace##+#
 {
     internal static class GlobalSettings
     {

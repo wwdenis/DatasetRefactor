@@ -3,80 +3,82 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using DatasetRefactor.Entities;
 using DatasetRefactor.Extensions;
-using DatasetRefactor.Models;
 
 namespace DatasetRefactor.Infrastructure
 {
     internal sealed class TypeScanner
     {
+        private const string TableManagerTyme = "TableAdapterManager";
+
         private static readonly string[] DatasetBaseTypes = new[] { "System.Data.DataSet" };
         private static readonly string[] TableBaseTypes = new[] { "System.Data.TypedTableBase`1", "System.Data.DataTable" };
         private static readonly string[] AdapterBaseTypes = new[] { "System.ComponentModel.Component" };
-        private readonly Assembly assembly;
+
+        private readonly IEnumerable<Type> adapters;
+        private readonly IEnumerable<Type> datasets;
+        private readonly IEnumerable<Type> tables;
 
         public TypeScanner(Assembly assembly)
         {
-            this.assembly = assembly;
+            if (assembly is null)
+            {
+                throw new ArgumentNullException(nameof(assembly));
+            }
+
+            this.adapters = assembly.FindTypes(AdapterBaseTypes, TableManagerTyme);
+            this.datasets = assembly.FindTypes(DatasetBaseTypes);
+            this.tables = assembly.FindTypes(TableBaseTypes);
         }
 
-        public IEnumerable<TypeMetadata> Scan(IEnumerable<TableFilter> filter = null)
+        public TypeResult Scan(IEnumerable<ScanFilter> filters = null)
         {
-            filter ??= Enumerable.Empty<TableFilter>();
-
-            var adapters = this.assembly.FindTypes(AdapterBaseTypes);
-            var datasets = this.assembly.FindTypes(DatasetBaseTypes);
-            var tables = this.assembly.FindTypes(TableBaseTypes);
-
-            var result = new List<TypeMetadata>();
-
-            foreach (var adapterType in adapters)
+            var list = new List<TypeMetadata>();
+            var errors = new List<string>();
+            
+            foreach (var adapter in this.adapters)
             {
-                var selected = filter.FirstOrDefault(i => string.Equals(i.Name, adapterType.Name, StringComparison.OrdinalIgnoreCase));
-                if (filter.Any() && selected is null)
-                {
-                    continue;
-                }
+                ScanFilter filter = null;
 
-                var found = FindEntities(adapterType, out var datasetName, out var tableName);
-                if (!found)
+                if (filters?.Any() ?? false)
                 {
-                    continue;
-                }
-
-                var datasetType = datasets.SingleOrDefault(i => i.FullName == datasetName);
-                var tableType = datasetType?.GetNestedTypes().SingleOrDefault(i => i.Name == tableName);
-
-                if (datasetType is not null)
-                {
-                    var search = new TypeMetadata
+                    filter = filters.FirstOrDefault(i => string.Equals(i.AdapterName, adapter.Name, StringComparison.OrdinalIgnoreCase));
+                    if (filter is null)
                     {
-                        AdapterType = adapterType,
-                        DatasetType = datasetType,
-                        TableType = tableType,
-                        AdapterName = adapterType.Name,
-                        DatasetName = datasetName,
-                        TableName = tableName,
-                        SelectedActions = selected?.Actions,
-                    };
+                        continue;
+                    }
+                }
 
-                    result.Add(search);
+                var success = TryParse(adapter, filter, out var metadata, out var error);
+
+                if (success)
+                {
+                    list.Add(metadata);
+                }
+                else
+                {
+                    errors.Add(error);
                 }
             }
 
-            return result;
+            return new TypeResult
+            {
+                Items = list,
+                Errors = errors,
+            };
         }
 
-        private static bool FindEntities(Type adapterType, out string datasetName, out string tableName)
+        private bool TryParse(Type adapterType, ScanFilter filter, out TypeMetadata metadata, out string error)
         {
-            datasetName = string.Empty;
-            tableName = string.Empty;
+            metadata = null;
+            error = string.Empty;
 
             var regex = new Regex(@"(?<Namespace>.*)\.(?<Dataset>\w*)TableAdapters\.(?<Table>.*)TableAdapter$");
             var match = regex.Match(adapterType.FullName);
-
             if (!match.Success)
             {
+                error = $"Invalid Adapter Name: {adapterType.FullName}";
                 return false;
             }
 
@@ -84,8 +86,22 @@ namespace DatasetRefactor.Infrastructure
             var dataset = match.Groups["Dataset"].Value;
             var table = match.Groups["Table"].Value;
 
-            datasetName = string.Join(".", root, dataset);
-            tableName = string.Join(string.Empty, table, "DataTable");
+            var datasetName = string.Join(".", root, dataset);
+            var tableName = string.Join(string.Empty, table, "DataTable");
+
+            var datasetType = this.datasets.SingleOrDefault(i => i.FullName == datasetName);
+            var tableType = datasetType?.GetNestedTypes().SingleOrDefault(i => i.Name == tableName && this.tables.Contains(i));
+
+            metadata = new TypeMetadata
+            {
+                AdapterType = adapterType,
+                DatasetType = datasetType,
+                TableType = tableType,
+                AdapterName = adapterType.Name,
+                DatasetName = datasetName,
+                TableName = tableName,
+                SelectedActions = filter?.Actions,
+            };
 
             return true;
         }

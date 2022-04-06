@@ -1,6 +1,8 @@
-﻿namespace DatasetRefactor.Models
+﻿using DatasetRefactor.Metadata;
+
+namespace DatasetRefactor.Entities
 {
-    public class TableGroup
+    public class ScanInfo
     {
         public DatasetInfo Dataset { get; set; }
 

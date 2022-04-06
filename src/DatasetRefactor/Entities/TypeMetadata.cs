@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace DatasetRefactor.Models
+namespace DatasetRefactor.Entities
 {
     public class TypeMetadata
     {

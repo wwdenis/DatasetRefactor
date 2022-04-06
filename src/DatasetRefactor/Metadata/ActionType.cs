@@ -1,4 +1,4 @@
-﻿namespace DatasetRefactor.Models
+﻿namespace DatasetRefactor.Metadata
 {
     public enum ActionType
     {

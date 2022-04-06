@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DatasetRefactor.Models
+namespace DatasetRefactor.Metadata
 {
     public class CommandInfo : IEquatable<CommandInfo>
     {

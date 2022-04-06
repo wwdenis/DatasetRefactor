@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 using DatasetRefactor.Extensions;
 
-namespace DatasetRefactor.Models
+namespace DatasetRefactor.Metadata
 {
     public class ActionParameter
     {

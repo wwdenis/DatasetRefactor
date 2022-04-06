@@ -3,9 +3,9 @@
     <TargetFramework>net472</TargetFramework>
     <OutputType>Library</OutputType>
     <LangVersion>latest</LangVersion>
-	<RootNamespace>#+Dataset##Namespace##+#</RootNamespace>
+	<RootNamespace>#+Root##Namespace##+#</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Using Include="#+Dataset##Namespace##+#" />
+    <Using Include="#+Root##Namespace##+#" />
   </ItemGroup>
 </Project>

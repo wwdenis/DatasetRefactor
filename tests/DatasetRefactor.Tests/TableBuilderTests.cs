@@ -30,13 +30,14 @@ namespace DatasetRefactor.Tests
 
             using var compiler = new CodeCompilerFixture(RootNamespace, DatasetName);
 
-            var expectedResult = compiler.BuildTableGroup(TableName, KeyColumn, columns);
+            var expectedResult = compiler.BuildScanResult(TableName, KeyColumn, columns);
             var assembly = compiler.CompileDataset(TableName, KeyColumn, columns);
-
             assembly.Should().NotBeNull();
 
-            var subject = new TableBuilder(assembly);
-            var result = subject.Build();
+            output.WriteLine($"Assembly Compiled: {assembly.FullName}");
+
+            var subject = new TableScanner(assembly);
+            var result = subject.Scan();
 
             result
                 .Should()

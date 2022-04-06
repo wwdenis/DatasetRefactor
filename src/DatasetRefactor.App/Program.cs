@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using DatasetRefactor.Models;
+using DatasetRefactor.Entities;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
@@ -32,10 +32,21 @@ namespace DatasetRefactor.App
 
                 LogSuccess("Reading all Datasets");
                 LogSuccess($"Assembly: {parameters.AssemblyFile}");
-                var files = GenerateFiles(parameters);
+                
+                GenerateFiles(parameters, out var files, out var errors);
 
                 LogText();
                 SaveFiles(files, parameters);
+
+                if (errors.Any())
+                {
+                    LogText();
+                    LogError("Errors:");
+                    foreach (var error in errors)
+                    {
+                        LogText(error, true);
+                    }
+                }
 
                 LogText();
                 LogSuccess($"Finished: {files.Count()} Files written");
@@ -49,22 +60,21 @@ namespace DatasetRefactor.App
             }
         }
 
-        private static IEnumerable<TransformFile> GenerateFiles(AppParameters parameters)
+        private static void GenerateFiles(AppParameters parameters, out IEnumerable<TransformFile> files, out IEnumerable<string> errors)
         {
             var assembly = Assembly.LoadFrom(parameters.AssemblyFile);
 
-            var tabelFilter = parameters.Selected.Select(i => new TableFilter(i.Key, i.Value));
-            var fileRenderer = new FileRenderer();
-            var tableBuilder = new TableBuilder(assembly);
-            tableBuilder.Progress += Builder_Progress;
+            var tabelFilter = parameters.Selected.Select(i => new ScanFilter(i.Key, i.Value));
+            var renderer = new FileRenderer();
+            var scanner = new TableScanner(assembly);
+            scanner.Progress += Scanner_Progress;
 
-            var groups = tableBuilder.Build(tabelFilter);
-            var files = fileRenderer.Generate(groups);
-
-            return files;
+            var result = scanner.Scan(tabelFilter);
+            files = renderer.Generate(result);
+            errors = result.Errors;
         }
 
-        private static void Builder_Progress(object sender, TypeMetadata metadata)
+        private static void Scanner_Progress(object sender, TypeMetadata metadata)
         {
             if (currentDataset != metadata.DatasetName)
             {
@@ -103,11 +113,11 @@ namespace DatasetRefactor.App
             var codeContents = file.Contents;
             File.WriteAllText(codePath, codeContents);
 
-            if (parameters.SaveSource)
+            if (parameters.SaveSource && !string.IsNullOrEmpty(file.SourceName))
             {
-                var jsonFile = Path.ChangeExtension(file.Adapter, "json");
+                var jsonFile = Path.ChangeExtension(file.SourceName, "json");
                 var jsonPath = BuildPath(jsonFile, parameters.TargetDir, "Sources", file.Directory);
-                var jsonContents = Serialize(file.Source);
+                var jsonContents = Serialize(file.SourceData);
 
                 if (!File.Exists(jsonPath))
                 {
@@ -154,14 +164,18 @@ namespace DatasetRefactor.App
             Console.ResetColor();
         }
 
-        private static void LogError(params string[] errors)
+        private static void LogError(string message)
         {
-            var error = string.Join(Environment.NewLine, errors);
-            var message = string.Join(Environment.NewLine, "Errors:", error, string.Empty, AppParameters.HelpMessage);
-
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine(message);
             Console.ResetColor();
+        }
+
+        private static void LogError(string[] errors)
+        {
+            var error = string.Join(Environment.NewLine, errors);
+            var message = string.Join(Environment.NewLine, "Errors:", error, string.Empty, AppParameters.HelpMessage);
+            LogError(message);
         }
 
         private static void LogText(string message = "", bool indent = false)

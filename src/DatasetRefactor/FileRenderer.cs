@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using DatasetRefactor.Models;
+using DatasetRefactor.Entities;
 using HashScript;
 using HashScript.Providers;
 
@@ -10,22 +10,16 @@ namespace DatasetRefactor
 {
     public class FileRenderer
     {
-        public IEnumerable<TransformFile> Generate(IEnumerable<TableGroup> groups)
+        public IEnumerable<TransformFile> Generate(ScanResult result)
         {
             var files = new List<TransformFile>();
 
-            if (!groups.Any())
+            if (!result.Items.Any())
             {
                 return files;
             }
 
-            var first = groups
-                .GroupBy(i => i.Dataset.Namespace)
-                .OrderBy(g => g.Count())
-                .Last()
-                .First();
-
-            var projectFile = $"{first.Dataset.Namespace}.csproj";
+            var projectFile = $"{result.Root.Namespace}.csproj";
 
             var mainTemplates = new Dictionary<string, bool>()
             {
@@ -45,7 +39,7 @@ namespace DatasetRefactor
                 { "Project", projectFile },
             };
 
-            foreach (var group in groups)
+            foreach (var group in result.Items)
             {
                 foreach (var template in mainTemplates)
                 {
@@ -56,12 +50,13 @@ namespace DatasetRefactor
                         continue;
                     }
 
+                    var adapter = group.Adapter.Name;
                     var targetDir = group.Dataset.Name;
                     var targetPrefix = group.Table?.Name ?? group.Adapter.Name;
                     var targetName = targetPrefix + templateName;
                     var targetFile = Path.ChangeExtension(targetName, "cs");
                     var contents = ReadTemplate(templateName, "Main");
-                    var file = RenderFile(group, contents, targetFile, targetDir);
+                    var file = RenderFile(group, adapter, contents, targetFile, targetDir);
                     files.Add(file);
                 }
             }
@@ -71,16 +66,16 @@ namespace DatasetRefactor
                 var templateName = template.Key;
                 var targetFile = template.Value ?? Path.ChangeExtension(templateName, "cs");
                 var contents = ReadTemplate(templateName, "Base");
-                var file = RenderFile(first, contents, targetFile, null);
+                var file = RenderFile(result, null, contents, targetFile, null);
                 files.Add(file);
             }
             
             return files;
         }
 
-        private static TransformFile RenderFile(TableGroup group, string template, string targetFile, string targetDir)
+        private static TransformFile RenderFile(object source, string name, string template, string targetFile, string targetDir)
         {
-            var provider = new ObjectValueProvider(group);
+            var provider = new ObjectValueProvider(source);
             var renderer = new Renderer(template);
             var generated = renderer.Generate(provider);
 
@@ -89,8 +84,8 @@ namespace DatasetRefactor
                 Name = targetFile,
                 Directory = targetDir,
                 Contents = generated,
-                Source = group,
-                Adapter = group.Adapter.Name,
+                SourceData = source,
+                SourceName = name,
             };
         }
 

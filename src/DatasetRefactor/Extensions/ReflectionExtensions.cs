@@ -13,23 +13,18 @@ namespace DatasetRefactor.Extensions
 
         private const BindingFlags AllMembers = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
-        public static IEnumerable<Type> FindTypes(this Assembly assembly, IEnumerable<string> baseNames, string typeName = null)
+        public static IEnumerable<Type> FindTypes(this Assembly assembly, IEnumerable<string> baseNames, string excludeName = null)
         {
-            return assembly.ExportedTypes.FindTypes(baseNames, typeName);
+            return assembly.ExportedTypes.FindTypes(baseNames, excludeName);
         }
 
-        public static IEnumerable<Type> FindTypes(this Type type, IEnumerable<string> baseNames, string typeName = null)
-        {
-            return type.GetNestedTypes().FindTypes(baseNames, typeName);
-        }
-
-        public static IEnumerable<Type> FindTypes(this IEnumerable<Type> types, IEnumerable<string> baseNames, string typeName = null)
+        public static IEnumerable<Type> FindTypes(this IEnumerable<Type> types, IEnumerable<string> baseNames, string excludeName = null)
         {
             return from i in types
                    let genericBase = i.BaseType.IsGenericType ? i.BaseType.GetGenericTypeDefinition() : null
                    let baseType = genericBase ?? i.BaseType
                    where baseNames.Contains(baseType.FullName)
-                   && (string.IsNullOrEmpty(typeName) || i.Name.StartsWith(typeName, StringComparison.Ordinal))
+                   && (string.IsNullOrEmpty(excludeName) || !i.Name.Equals(excludeName, StringComparison.Ordinal))
                    orderby i.Name
                    select i;
         }

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace DatasetRefactor.Models
+namespace DatasetRefactor.Metadata
 {
     public class ActionInfo
     {

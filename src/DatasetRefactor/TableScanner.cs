@@ -3,30 +3,31 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reflection;
+using DatasetRefactor.Entities;
 using DatasetRefactor.Extensions;
 using DatasetRefactor.Infrastructure;
-using DatasetRefactor.Models;
+using DatasetRefactor.Metadata;
 
 namespace DatasetRefactor
 {
-    public class TableBuilder
+    public class TableScanner
     {
         private readonly Assembly assembly;
 
         public event EventHandler<TypeMetadata> Progress;
 
-        public TableBuilder(Assembly assembly)
+        public TableScanner(Assembly assembly)
         {
             this.assembly = assembly;
         }
 
-        public IEnumerable<TableGroup> Build(IEnumerable<TableFilter> filter = null)
+        public ScanResult Scan(IEnumerable<ScanFilter> filter = null)
         {
             var scanner = new TypeScanner(this.assembly);
-            var metadata = scanner.Scan(filter);
-            var result = new List<TableGroup>();
+            var scan = scanner.Scan(filter);
+            var result = new List<ScanInfo>();
 
-            foreach (var item in metadata)
+            foreach (var item in scan.Items)
             {
                 this.OnProgress(item);
 
@@ -34,17 +35,29 @@ namespace DatasetRefactor
                 var tableInfo = BuildTable(item);
                 var datasetInfo = new DatasetInfo(item.DatasetType);
 
-                var tableGroup = new TableGroup
+                var info = new ScanInfo
                 {
                     Dataset = datasetInfo,
                     Table = tableInfo,
                     Adapter = adapterInfo,
                 };
 
-                result.Add(tableGroup);
+                result.Add(info);
             }
+            
+            var mainNamescace = result
+                .Select(i => i.Dataset.Namespace)
+                .GroupBy(i => i)
+                .OrderBy(g => g.Count())
+                .Last()
+                .First();
 
-            return result;
+            return new ScanResult
+            {
+                Root = new RootInfo(mainNamescace),
+                Items = result,
+                Errors = scan.Errors,
+            };
         }
 
         private static TableInfo BuildTable(TypeMetadata meta)
