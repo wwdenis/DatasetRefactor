@@ -1,4 +1,4 @@
-namespace DatasetRefactor.Entities
+namespace DatasetRefactor.App.Infrastructure
 {
     public class TransformFile
     {
