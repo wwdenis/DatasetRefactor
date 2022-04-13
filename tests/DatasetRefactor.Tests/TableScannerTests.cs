@@ -6,11 +6,11 @@ using Xunit.Abstractions;
 
 namespace DatasetRefactor.Tests
 {
-    public class TableBuilderTests 
+    public class TableScannerTests 
     {
         private readonly ITestOutputHelper output;
 
-        public TableBuilderTests(ITestOutputHelper output)
+        public TableScannerTests(ITestOutputHelper output)
         {
             this.output = output;
         }
