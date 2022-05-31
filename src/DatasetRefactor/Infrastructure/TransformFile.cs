@@ -1,6 +1,6 @@
 namespace DatasetRefactor.Infrastructure
 {
-    public class TransformFile
+    internal class TransformFile
     {
         public string Name { get; set; }
 

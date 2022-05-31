@@ -1,6 +1,6 @@
 ﻿namespace DatasetRefactor.Metadata
 {
-    public class RootInfo
+    internal class RootInfo
     {
         public RootInfo()
         {

@@ -3,7 +3,7 @@ using DatasetRefactor.Extensions;
 
 namespace DatasetRefactor.Metadata
 {
-    public class ActionParameter
+    internal class ActionParameter
     {
         public ActionParameter()
         {

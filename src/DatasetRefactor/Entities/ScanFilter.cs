@@ -2,7 +2,7 @@
 
 namespace DatasetRefactor.Entities
 {
-    public class ScanFilter
+    internal class ScanFilter
     {
         public ScanFilter()
         {

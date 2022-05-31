@@ -8,7 +8,7 @@ using HashScript.Providers;
 
 namespace DatasetRefactor.Infrastructure
 {
-    public class FileRenderer
+    internal class FileRenderer
     {
         public IEnumerable<TransformFile> Generate(ScanResult result, TemplateGroup templates)
         {

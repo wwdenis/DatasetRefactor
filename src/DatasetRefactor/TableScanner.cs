@@ -10,7 +10,7 @@ using DatasetRefactor.Metadata;
 
 namespace DatasetRefactor
 {
-    public class TableScanner
+    internal class TableScanner
     {
         private readonly Assembly assembly;
 

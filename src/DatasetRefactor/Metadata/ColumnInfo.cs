@@ -1,6 +1,6 @@
 ﻿namespace DatasetRefactor.Metadata
 {
-    public class ColumnInfo
+    internal class ColumnInfo
     {
         public string Name { get; set; }
 

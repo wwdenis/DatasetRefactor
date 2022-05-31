@@ -2,7 +2,7 @@
 
 namespace DatasetRefactor.Metadata
 {
-    public class CommandInfo : IEquatable<CommandInfo>
+    internal class CommandInfo : IEquatable<CommandInfo>
     {
         public ActionType Type { get; set; }
 

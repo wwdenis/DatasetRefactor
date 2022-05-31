@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace DatasetRefactor.Entities
 {
-    public class TypeMetadata
+    internal class TypeMetadata
     {
         public Type AdapterType { get; set; }
 

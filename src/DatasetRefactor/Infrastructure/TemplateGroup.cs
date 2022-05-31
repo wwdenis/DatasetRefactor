@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace DatasetRefactor.Infrastructure
 {
-    public class TemplateGroup
+    internal class TemplateGroup
     {
         public TemplateFile Project { get; set; }
 

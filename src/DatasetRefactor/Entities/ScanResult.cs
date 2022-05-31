@@ -4,7 +4,7 @@ using DatasetRefactor.Metadata;
 
 namespace DatasetRefactor.Entities
 {
-    public class ScanResult
+    internal class ScanResult
     {
         public ScanResult()
         {

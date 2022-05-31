@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace DatasetRefactor.Metadata
 {
-    public class AdapterInfo
+    internal class AdapterInfo
     {
         public AdapterInfo()
         {

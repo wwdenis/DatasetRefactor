@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace DatasetRefactor.Entities
 {
-    public class TypeResult
+    internal class TypeResult
     {
         public TypeResult()
         {

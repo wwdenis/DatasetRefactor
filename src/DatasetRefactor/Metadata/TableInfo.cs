@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace DatasetRefactor.Metadata
 {
-    public class TableInfo
+    internal class TableInfo
     {
         public TableInfo()
         {

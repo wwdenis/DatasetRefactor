@@ -2,7 +2,7 @@
 
 namespace DatasetRefactor.Metadata
 {
-    public class DatasetInfo
+    internal class DatasetInfo
     {
         public DatasetInfo()
         {

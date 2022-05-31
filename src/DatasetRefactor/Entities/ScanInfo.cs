@@ -2,7 +2,7 @@
 
 namespace DatasetRefactor.Entities
 {
-    public class ScanInfo
+    internal class ScanInfo
     {
         public DatasetInfo Dataset { get; set; }
 

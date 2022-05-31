@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace DatasetRefactor.Metadata
 {
-    public class ActionInfo
+    internal class ActionInfo
     {
         public ActionInfo()
         {
