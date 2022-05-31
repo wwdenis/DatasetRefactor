@@ -2,21 +2,24 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 
 namespace DatasetRefactor.Infrastructure
 {
     internal class AppParameters
     {
-        public const string HelpMessage = "Usage: DatasetRefactor source=[assembly] target=[directory] save=[0/1] filter=[filterFile]";
+        public const string HelpMessage = "Usage: DatasetRefactor source=[assembly] target=[directory] templates=[directory] save=[0/1] filter=[filterFile]";
 
         public string AssemblyFile { get; set; }
 
         public string TargetDir { get; set; }
-        
+
+        public string TemplateDir { get; set; }
+
         public bool SaveSource { get; set; }
 
         public Dictionary<string, string[]> Selected { get; set; }
+
+        public TemplateGroup Templates { get; set; }
 
         public string[] Errors { get; set; }
 
@@ -27,6 +30,7 @@ namespace DatasetRefactor.Infrastructure
             var targetDir = string.Empty;
             var saveSource = string.Empty;
             var filterFile = string.Empty;
+            var templateDir = string.Empty;
 
             var parameters = args
                 .Select(i => i.Split('='))
@@ -36,6 +40,7 @@ namespace DatasetRefactor.Infrastructure
             parameters.TryGetValue("target", out targetDir);
             parameters.TryGetValue("save", out saveSource);
             parameters.TryGetValue("filter", out filterFile);
+            parameters.TryGetValue("templates", out templateDir);
 
             if (string.IsNullOrWhiteSpace(assemblyFile))
             {
@@ -61,6 +66,13 @@ namespace DatasetRefactor.Infrastructure
                 errors.Add(error);
             }
 
+            if (string.IsNullOrWhiteSpace(templateDir))
+            {
+                templateDir = "Templates";
+            }
+
+            var templates = TemplateGroup.ReadAll(templateDir);
+
             return new AppParameters
             {
                 AssemblyFile = assemblyFile,
@@ -68,6 +80,8 @@ namespace DatasetRefactor.Infrastructure
                 SaveSource = saveSource == "1",
                 Errors = errors.ToArray(),
                 Selected = selected,
+                TemplateDir = templateDir,
+                Templates = templates,
             };
         }
 

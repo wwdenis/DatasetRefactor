@@ -71,7 +71,7 @@ namespace DatasetRefactor
             scanner.Progress += Scanner_Progress;
 
             var result = scanner.Scan(tabelFilter);
-            files = renderer.Generate(result);
+            files = renderer.Generate(result, parameters.Templates);
             errors = result.Errors;
         }
 
@@ -119,11 +119,7 @@ namespace DatasetRefactor
                 var jsonFile = Path.ChangeExtension(file.SourceName, "json");
                 var jsonPath = BuildPath(jsonFile, parameters.TargetDir, "Sources", file.Directory);
                 var jsonContents = Serialize(file.SourceData);
-
-                if (!File.Exists(jsonPath))
-                {
-                    File.WriteAllText(jsonPath, jsonContents);
-                }
+                File.WriteAllText(jsonPath, jsonContents);
             }
         }
 

@@ -11,5 +11,10 @@ namespace DatasetRefactor.Infrastructure
         public string SourceName { get; set; }
         
         public object SourceData { get; set; }
+
+        public override string ToString()
+        {
+            return this.Name;
+        }
     }
 }
