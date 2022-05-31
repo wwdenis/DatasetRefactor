@@ -14,63 +14,70 @@ namespace DatasetRefactor.Infrastructure
         {
             var files = new List<TransformFile>();
 
+            var adapterItems = result.Items;
+            var tableItems = result.Items.Where(i => i.Table != null);
+
             if (!result.Items.Any())
             {
                 return files;
             }
 
-            var projectFile = $"{result.Root.Namespace}.csproj";
+            var assembly = typeof(FileRenderer).Assembly;
+            var templateFiles = assembly.GetManifestResourceNames();
+            var templateContents = templateFiles.ToDictionary(k => k, v => ReadTemplate(v));
 
-            var mainTemplates = new Dictionary<string, bool>()
-            {
-                { "TableAdapter", true },
-                { "DataTable", false },
-                { "Row", false },
-            };
+            var tableTemplates = templateContents.Where(i => i.Key.Contains(".Table."));
+            var adapterTemplates = templateContents.Where(i => i.Key.Contains(".Adapter."));
+            var baseTemplates = templateContents.Where(i => i.Key.Contains(".Base."));
+            var projectTemplates = templateContents.Where(i => i.Key.Contains(".Project."));
 
-            var baseTemplates = new Dictionary<string, string>()
+            foreach (var template in adapterTemplates)
             {
-                { "DbAdapter", null },
-                { "DbTable", null },
-                { "DbRow", null },
-                { "DbColumnAttribute", null },
-                { "GlobalSettings", null },
-                { "GlobalSupressions", null },
-                { "Project", projectFile },
-            };
-
-            foreach (var group in result.Items)
-            {
-                foreach (var template in mainTemplates)
+                foreach (var item in adapterItems)
                 {
-                    var templateName = template.Key;
-                    var isAdapter = template.Value;
-                    if (!isAdapter && group.Table is null)
-                    {
-                        continue;
-                    }
+                    var adapterFile = RenderDataFile(item, template.Key, template.Value);
+                    files.Add(adapterFile);
+                }
+            }
 
-                    var adapter = group.Adapter.Name;
-                    var targetDir = group.Dataset.Name;
-                    var targetPrefix = group.Table?.Name ?? group.Adapter.Name;
-                    var targetName = targetPrefix + templateName;
-                    var targetFile = Path.ChangeExtension(targetName, "cs");
-                    var contents = ReadTemplate(templateName, "Main");
-                    var file = RenderFile(group, adapter, contents, targetFile, targetDir);
-                    files.Add(file);
+            foreach (var template in tableTemplates)
+            {
+                foreach (var item in tableItems)
+                {
+                    var adapterFile = RenderDataFile(item, template.Key, template.Value);
+                    files.Add(adapterFile);
                 }
             }
 
             foreach (var template in baseTemplates)
             {
-                var templateName = template.Key;
-                var targetFile = template.Value ?? Path.ChangeExtension(templateName, "cs");
-                var contents = ReadTemplate(templateName, "Base");
-                var file = RenderFile(result, null, contents, targetFile, null);
-                files.Add(file);
+                var templateName = ParseTemplateName(template.Key);
+                var targetFile = Path.ChangeExtension(templateName, "cs");
+                var baseFile = RenderFile(result, null, template.Value, targetFile, null);
+                files.Add(baseFile);
             }
-            
+
+            foreach (var template in projectTemplates)
+            {
+                var targetFile = $"{result.Root.Namespace}.csproj";
+                var projFile = RenderFile(result, null, template.Value, targetFile, null);
+                files.Add(projFile);
+            }
+
             return files;
+        }
+
+        private static TransformFile RenderDataFile(ScanInfo info, string templatePath, string templateContents)
+        {
+            var templateName = ParseTemplateName(templatePath);
+
+            var adapter = info.Adapter.Name;
+            var targetDir = info.Dataset.Name;
+            var targetPrefix = info.Table?.Name ?? info.Adapter.Name;
+            var targetName = targetPrefix + templateName;
+            var targetFile = Path.ChangeExtension(targetName, "cs");
+
+            return RenderFile(info, adapter, templateContents, targetFile, targetDir);
         }
 
         private static TransformFile RenderFile(object source, string name, string template, string targetFile, string targetDir)
@@ -89,18 +96,24 @@ namespace DatasetRefactor.Infrastructure
             };
         }
 
-        private static string ReadTemplate(string templateName, string templateDir)
+        public static string ParseTemplateName(string templatePath)
+        {
+            var fragments = templatePath.Split('.');
+
+            if (fragments.Count() < 2)
+            {
+                return string.Empty;
+            }
+
+            return fragments.ElementAtOrDefault(fragments.Count() - 2);
+        }
+
+        private static string ReadTemplate(string templatePath)
         {
             var assembly = typeof(FileRenderer).Assembly;
-            var assemblyName = assembly.GetName().Name;
-            var fragments = new[] { assemblyName, "Templates", templateDir, templateName, "hz" };
-            var templatePath = string.Join(".", fragments.Where(i => i != null));
-
             using var stream = assembly.GetManifestResourceStream(templatePath);
             using var reader = new StreamReader(stream);
-            var template = reader.ReadToEnd();
-
-            return template;
+            return reader.ReadToEnd();
         }
     }
 }
