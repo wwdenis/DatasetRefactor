@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <OutputType>Library</OutputType>
+    <LangVersion>latest</LangVersion>
+	<RootNamespace>#+Root##Namespace##+#</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="#+Root##Namespace##+#" />
+  </ItemGroup>
+</Project>

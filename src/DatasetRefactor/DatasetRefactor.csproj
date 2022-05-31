@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>Latest</LangVersion>
+    <Product>DatasetRefactor</Product>
+    <Title>DatasetRefactor</Title>
+    <Version>0.0.1</Version>
+    <AssemblyVersion>0.0.1</AssemblyVersion>
+    <Authors>Denis Da Silva</Authors>
+    <Company>Denis Da Silva</Company>
+    <Copyright>Copyright © Denis Silva Da Silva 2022</Copyright>
+    <Description>
+      DatasetRefactor translates Typed Datasets into Plain code.
+    </Description>
+    <RepositoryUrl>https://github.com/wwdenis/DatasetRefactor/</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>DatasetRefactor.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\**\*.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Templates\**\*.*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HashScript" Version="0.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+</Project>

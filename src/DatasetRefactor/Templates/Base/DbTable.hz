@@ -1,0 +1,80 @@
+﻿#+Root#namespace #Namespace##+#
+{
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Data;
+    using System.Linq;
+
+    public abstract class DbTable<T> : DataTable, IEnumerable<T>
+        where T : DbRow
+    {
+        private static readonly IEnumerable<DbColumnAttribute> ColumnCache;
+
+        static DbTable()
+        {
+            ColumnCache = DbColumnAttribute.BuildColumns(typeof(T));
+        }
+
+        public DbTable()
+        {
+            this.Initialize();
+        }
+
+        public T this[int index]
+        {
+            get
+            {
+                return (T)this.Rows[index];
+            }
+        }
+
+        public IEnumerable<T> AsEnumerable()
+        {
+            return this;
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            return this.Rows.Cast<T>().GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return this.Rows.GetEnumerator();
+        }
+
+        protected override Type GetRowType()
+        {
+            return typeof(T);
+        }
+
+        protected virtual T NewDataRow()
+        {
+            return (T)this.NewRow();
+        }
+
+        public T FindRow(params object[] parameters)
+        {
+            return (T)this.Rows.Find(parameters);
+        }
+
+        private void Initialize()
+        {
+            var columns = ColumnCache
+                .Select(i => new DataColumn(i.ColumnName, i.ColumnType))
+                .ToArray();
+
+            var primaryKeyNames = ColumnCache
+                .Where(i => i.PrimaryKey)
+                .Select(i => i.ColumnName);
+
+            var primaryKey = columns
+                .Where(i => primaryKeyNames.Contains(i.ColumnName))
+                .ToArray();
+
+            this.Columns.AddRange(columns);
+            this.PrimaryKey = primaryKey;
+        }
+    }
+}
