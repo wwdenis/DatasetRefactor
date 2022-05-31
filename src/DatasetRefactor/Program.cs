@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using DatasetRefactor.App.Infrastructure;
+using DatasetRefactor.Infrastructure;
 using DatasetRefactor.Entities;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace DatasetRefactor.App
+namespace DatasetRefactor
 {
     class Program
     {

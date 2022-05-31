@@ -6,14 +6,14 @@
             "type": "clr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/src/DatasetRefactor.App/bin/Debug/net472/DatasetRefactor.App.exe",
+            "program": "${workspaceFolder}/src/DatasetRefactor/bin/Debug/net472/DatasetRefactor.exe",
             "args": [
                 "source=DLL_FILE",
                 "target=OUTPUT_DIRECTORY",
                 "filter=TABLE_NAME_FILTER",
                 "save=1"
             ],
-            "cwd": "${workspaceFolder}/src/DatasetRefactor.App",
+            "cwd": "${workspaceFolder}/src/DatasetRefactor",
             "console": "internalConsole",
             "stopAtEntry": false,
             "internalConsoleOptions": "openOnSessionStart"

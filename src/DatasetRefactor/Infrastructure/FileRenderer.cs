@@ -6,7 +6,7 @@ using DatasetRefactor.Entities;
 using HashScript;
 using HashScript.Providers;
 
-namespace DatasetRefactor.App.Infrastructure
+namespace DatasetRefactor.Infrastructure
 {
     public class FileRenderer
     {

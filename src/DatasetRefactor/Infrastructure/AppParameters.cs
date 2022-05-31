@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace DatasetRefactor.App.Infrastructure
+namespace DatasetRefactor.Infrastructure
 {
     internal class AppParameters
     {

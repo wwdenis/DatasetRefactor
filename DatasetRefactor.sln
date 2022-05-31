@@ -1,17 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31727.386
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32328.378
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DatasetRefactor.App", "src\DatasetRefactor.App\DatasetRefactor.App.csproj", "{969E1007-A176-45E9-878C-78645A260325}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DatasetRefactor", "src\DatasetRefactor\DatasetRefactor.csproj", "{969E1007-A176-45E9-878C-78645A260325}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{6468528A-E29F-4526-B30A-8013791AE49C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DatasetRefactor", "src\DatasetRefactor\DatasetRefactor.csproj", "{E44E9E90-DF15-418F-B62E-E6F6CC95C22E}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{FAD38C96-A250-4B87-9E69-140668053BC9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DatasetRefactor.Tests", "tests\DatasetRefactor.Tests\DatasetRefactor.Tests.csproj", "{CAF2CA23-9CC8-43D8-A181-42870FB21F73}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DatasetRefactor.Tests", "tests\DatasetRefactor.Tests\DatasetRefactor.Tests.csproj", "{CAF2CA23-9CC8-43D8-A181-42870FB21F73}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,10 +21,6 @@ Global
 		{969E1007-A176-45E9-878C-78645A260325}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{969E1007-A176-45E9-878C-78645A260325}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{969E1007-A176-45E9-878C-78645A260325}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E44E9E90-DF15-418F-B62E-E6F6CC95C22E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E44E9E90-DF15-418F-B62E-E6F6CC95C22E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E44E9E90-DF15-418F-B62E-E6F6CC95C22E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E44E9E90-DF15-418F-B62E-E6F6CC95C22E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CAF2CA23-9CC8-43D8-A181-42870FB21F73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CAF2CA23-9CC8-43D8-A181-42870FB21F73}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CAF2CA23-9CC8-43D8-A181-42870FB21F73}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -37,7 +31,6 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{969E1007-A176-45E9-878C-78645A260325} = {6468528A-E29F-4526-B30A-8013791AE49C}
-		{E44E9E90-DF15-418F-B62E-E6F6CC95C22E} = {6468528A-E29F-4526-B30A-8013791AE49C}
 		{CAF2CA23-9CC8-43D8-A181-42870FB21F73} = {FAD38C96-A250-4B87-9E69-140668053BC9}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
