@@ -70,9 +70,21 @@ namespace DatasetRefactor
             var scanner = new TableScanner(assembly);
             scanner.Progress += Scanner_Progress;
 
-            var result = scanner.Scan(tabelFilter);
+            var result = scanner.Scan(tabelFilter, parameters.RootNamespace);
             files = renderer.Generate(result, parameters.Templates);
             errors = result.Errors;
+
+            var adapters = result.Items.Select(i => i.Adapter).Where(i => i is not null);
+            var tables = result.Items.Select(i => i.Table).Where(i => i is not null);
+
+            var commandCount = adapters.Sum(i => i.Commands.Count());
+            var columnCount = tables.Sum(i => i.Columns.Count());
+
+            LogText();
+            LogSuccess($"Total Adapters: {adapters.Count()}");
+            LogSuccess($"Total Commands: {commandCount}");
+            LogSuccess($"Total Tables: {tables.Count()}");
+            LogSuccess($"Total Columns: {columnCount}");
         }
 
         private static void Scanner_Progress(object sender, TypeMetadata metadata)
@@ -110,14 +122,14 @@ namespace DatasetRefactor
 
         private static void SaveFile(TransformFile file, AppParameters parameters)
         {
-            var codePath = BuildPath(file.Name, parameters.TargetDir, "Generated", file.Directory);
+            var codePath = BuildPath(file.Name, parameters.OutputRoot, "Generated", file.Directory);
             var codeContents = file.Contents;
             File.WriteAllText(codePath, codeContents);
 
-            if (parameters.SaveSource && !string.IsNullOrEmpty(file.SourceName))
+            if (parameters.SaveData && !string.IsNullOrEmpty(file.SourceName))
             {
                 var jsonFile = Path.ChangeExtension(file.SourceName, "json");
-                var jsonPath = BuildPath(jsonFile, parameters.TargetDir, "Sources", file.Directory);
+                var jsonPath = BuildPath(jsonFile, parameters.OutputRoot, "Sources", file.Directory);
                 var jsonContents = Serialize(file.SourceData);
                 File.WriteAllText(jsonPath, jsonContents);
             }

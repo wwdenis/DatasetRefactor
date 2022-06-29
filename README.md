@@ -11,7 +11,7 @@ It uses the power of [HashScript](https://github.com/wwdenis/HashScript) for tem
 ## Command Syntax
 
 ```
-DatasetRefactor source=[assembly] target=[directory] templates=[directory] save=[0/1] filter=[filterFile]
+DatasetRefactor assemblyFile=[assembly] outputRoot=[directory] templateRoot=[directory] saveData=[0/1] filterFile=[file] rootNamespace=[namespace]
 ```
 
 ## Command Arguments
@@ -29,12 +29,11 @@ DatasetRefactor source=[assembly] target=[directory] templates=[directory] save=
 Scans the assembly `AdventureWorkds.dll` and saves the generated code to `C:\Target` using the default `HashScript` templates
 
 ```
-DatasetRefactor source=C:\Source\AdventureWorkds.dll target=C:\Target
+DatasetRefactor assemblyFile=C:\Source\AdventureWorkds.dll outputRoot=C:\Target
 ```
 
-Scans the assembly `AdventureWorkds.dll` and saves the generated code `C:\Target` using custom `HashScript` templates
-Filters only the Dataset `HumanResourcesDataset`
+Scans the assembly `AdventureWorkds.dll` and saves the generated code `C:\Target` using custom `HashScript` templates, and custom filter and namespace
 
 ```
-DatasetRefactor source=C:\Source\AdventureWorkds.dll target=C:\Target templates=C:\Templates save=1 filter=HumanResourcesDataset
+DatasetRefactor assemblyFile=C:\Source\AdventureWorkds.dll outputRoot=C:\Target templateRoot=C:\Templates saveData=1 filterFile=MyFilter.txt rootNamespace=MyCustomNamespace
 ```
