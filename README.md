@@ -18,11 +18,12 @@ DatasetRefactor assemblyFile=[assembly] outputRoot=[directory] templateRoot=[dir
 
 | Argument | Description |
 | -- | --------- |
-| **source** | The source .NET Assembly |
-| **target** | The destination directory for the generated code |
-| **templates** | The directory containing custom `HashScript` templates |
-| **save** | When set to `1` saves the DataSet structure in `JSON` format |
-| **filter** | When set to a existing DataSet, generates only the code related to it |
+| **assemblyFile** | The source .NET Assembly |
+| **outputRoot** | The destination directory for the generated code |
+| **templateRoot** | The directory containing custom `HashScript` templates |
+| **saveData** | When set to `1` saves the DataSet structure in `JSON` format |
+| **filterFile** | A comma-separated file containing a list of TableAdapters/Methods to be generated |
+| **rootNamespace** | Overrides the source .NET Assembly Root Namespace on the refactored code |
 
 ## Example
 
