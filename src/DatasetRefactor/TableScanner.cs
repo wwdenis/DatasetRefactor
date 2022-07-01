@@ -168,7 +168,7 @@ namespace DatasetRefactor
             var actionTable = actions.Select(i => i.Table).FirstOrDefault(i => i is not null);
             var adapterTable = new TableInfo
             {
-                Name = actionTable?.Name,
+                Name = actionTable?.Name ?? type.Name.Replace("TableAdapter", ""),
                 Namespace = actionTable?.Namespace,
             };
 
