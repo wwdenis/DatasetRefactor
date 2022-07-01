@@ -65,9 +65,19 @@ namespace DatasetRefactor.Infrastructure
             {
                 errors.Add($"Parameter [OutputRoot] is mandatory");
             }
-            else if (!Directory.Exists(outputRoot))
+            else
             {
-                errors.Add($"Output Directory [{outputRoot}] does not exist");
+                var dir = new DirectoryInfo(outputRoot);
+                var parent = dir.Parent;
+
+                if (!parent.Exists)
+                {
+                    errors.Add($"Parent Directory [{parent.FullName}] does not exist");
+                }
+                else if (!dir.Exists)
+                {
+                    dir.Create();
+                }
             }
 
             var hasFilter = TryReadFilter(filterFile, out var error, out var selected);
