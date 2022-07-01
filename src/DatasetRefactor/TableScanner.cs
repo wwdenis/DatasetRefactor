@@ -91,8 +91,8 @@ namespace DatasetRefactor
                     {
                         action.Table = new TableInfo
                         {
-                            Namespace = datasetNamespace,
                             Name = tableName,
+                            Namespace = datasetNamespace,
                         };
                         actions.Add(action);
                     }
@@ -165,10 +165,18 @@ namespace DatasetRefactor
                 commands.Add(command);
             }
 
+            var actionTable = actions.Select(i => i.Table).FirstOrDefault(i => i is not null);
+            var adapterTable = new TableInfo
+            {
+                Name = actionTable?.Name,
+                Namespace = actionTable?.Namespace,
+            };
+
             return new AdapterInfo
             {
                 Name = type.Name,
                 Namespace = type.Namespace,
+                Table = adapterTable,
                 Scalar = actions.Where(i => i.Type == ActionType.Execute),
                 Select = actions.Where(i => i.Type == ActionType.Select),
                 Insert = actions.FirstOrDefault(i => i.Type == ActionType.Insert),

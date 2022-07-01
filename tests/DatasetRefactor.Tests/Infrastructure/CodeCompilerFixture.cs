@@ -244,6 +244,11 @@ namespace DatasetRefactor.Tests.Infrastructure
             {
                 Name = tableName + "TableAdapter",
                 Namespace = string.Join("", this.rootNamespace, ".", this.datasetName, "TableAdapters"),
+                Table = new TableInfo
+                {
+                    Namespace = $"{this.rootNamespace}.{this.datasetName}",
+                    Name = tableName,
+                },
                 Commands = adapterCommands,
                 Insert = actions.Single(i => i.Type == ActionType.Insert),
                 Delete = actions.Single(i => i.Type == ActionType.Delete),
