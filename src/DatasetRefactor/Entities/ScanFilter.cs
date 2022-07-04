@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace DatasetRefactor.Entities
 {
@@ -8,11 +9,14 @@ namespace DatasetRefactor.Entities
         {
         }
 
-        public ScanFilter(string adapterName, IEnumerable<string> actions)
+        public ScanFilter(string datasetName, string adapterName, IEnumerable<string> actions)
         {
+            this.DatasetName = datasetName;
             this.AdapterName = adapterName;
             this.Actions = actions;
         }
+
+        public string DatasetName { get; set; }
 
         public string AdapterName { get; set; }
 

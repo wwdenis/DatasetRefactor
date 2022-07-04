@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using DatasetRefactor.Entities;
 
 namespace DatasetRefactor.Infrastructure
 {
@@ -20,7 +21,7 @@ namespace DatasetRefactor.Infrastructure
 
         public string RootNamespace { get; set; }
 
-        public Dictionary<string, string[]> Selected { get; set; }
+        public IEnumerable<ScanFilter> Selected { get; set; }
 
         public TemplateGroup Templates { get; set; }
 
@@ -106,9 +107,9 @@ namespace DatasetRefactor.Infrastructure
             };
         }
 
-        private static bool TryReadFilter(string filterFile, out string error, out Dictionary<string, string[]> result)
+        private static bool TryReadFilter(string filterFile, out string error, out IEnumerable<ScanFilter> result)
         {
-            result = new Dictionary<string, string[]>();
+            result = new List<ScanFilter>();
             error = string.Empty;
 
             if (string.IsNullOrWhiteSpace(filterFile))
@@ -130,29 +131,24 @@ namespace DatasetRefactor.Infrastructure
             }
 
             var lines = File.ReadAllLines(filterFile);
-            var parsed = new List<(string Adapter, string Method)>();
+            var parsed = from line in lines
+                         let cells = line.Split(',')
+                         where !cells.Any(i => string.IsNullOrWhiteSpace(i)) && cells.Count() == 3
+                         select new
+                         {
+                             Dataset = cells.ElementAtOrDefault(0),
+                             Adapter = cells.ElementAtOrDefault(1),
+                             Action = cells.ElementAtOrDefault(2),
+                         };
 
-            foreach (var line in lines)
-            {
-                var cells = line.Split(',');
-                var adapterName = cells.ElementAtOrDefault(0);
-                var actionName = cells.ElementAtOrDefault(1);
-                parsed.Add((adapterName, actionName));
-            }
-
-            var grouped = from i in parsed
-                          where !string.IsNullOrWhiteSpace(i.Adapter)
-                          group i by i.Adapter into g
-                          let methods = from m in g
-                                        where !string.IsNullOrWhiteSpace(m.Method)
-                                        select m.Method
-                          select new
-                          {
-                              Adapter = g.Key,
-                              Methods = methods
-                          };
-
-            result = grouped.ToDictionary(k => k.Adapter, v => v.Methods.ToArray());
+            result = from i in parsed
+                     group i by new { i.Dataset, i.Adapter } into g
+                     select new ScanFilter
+                     {
+                         DatasetName = g.Key.Dataset,
+                         AdapterName = g.Key.Adapter,
+                         Actions = g.Select(i => i.Action)
+                     };
 
             return true;
         }

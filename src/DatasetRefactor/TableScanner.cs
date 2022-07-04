@@ -21,10 +21,12 @@ namespace DatasetRefactor
             this.assembly = assembly;
         }
 
-        public ScanResult Scan(IEnumerable<ScanFilter> filter = null, string rootNamespace = null)
+        public ScanResult Scan(IEnumerable<ScanFilter> filters = null, string rootNamespace = null)
         {
+            filters ??= Enumerable.Empty<ScanFilter>();
+
             var scanner = new TypeScanner(this.assembly);
-            var scan = scanner.Scan(filter);
+            var scan = scanner.Scan(filters);
             var result = new List<ScanInfo>();
 
             foreach (var item in scan.Items)

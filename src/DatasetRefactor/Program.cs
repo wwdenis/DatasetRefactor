@@ -34,7 +34,7 @@ namespace DatasetRefactor
                 LogSuccess("Reading all Datasets");
                 LogSuccess($"Assembly: {parameters.AssemblyFile}");
                 
-                GenerateFiles(parameters, out var files, out var errors);
+                RenderFiles(parameters, out var files, out var errors);
 
                 LogText();
                 SaveFiles(files, parameters);
@@ -61,16 +61,15 @@ namespace DatasetRefactor
             }
         }
 
-        private static void GenerateFiles(AppParameters parameters, out IEnumerable<TransformFile> files, out IEnumerable<string> errors)
+        private static void RenderFiles(AppParameters parameters, out IEnumerable<TransformFile> files, out IEnumerable<string> errors)
         {
             var assembly = Assembly.LoadFrom(parameters.AssemblyFile);
 
-            var tabelFilter = parameters.Selected.Select(i => new ScanFilter(i.Key, i.Value));
             var renderer = new FileRenderer();
             var scanner = new TableScanner(assembly);
             scanner.Progress += Scanner_Progress;
 
-            var result = scanner.Scan(tabelFilter, parameters.RootNamespace);
+            var result = scanner.Scan(parameters.Selected, parameters.RootNamespace);
             files = renderer.Generate(result, parameters.Templates);
             errors = result.Errors;
 
@@ -104,6 +103,8 @@ namespace DatasetRefactor
             LogSuccess("Saving Structure:");
 
             var currentDir = string.Empty;
+
+            files = files.OrderBy(i => i.Directory);
 
             foreach (var file in files)
             {
