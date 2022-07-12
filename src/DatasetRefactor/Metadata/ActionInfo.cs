@@ -12,7 +12,7 @@ namespace DatasetRefactor.Metadata
             this.Parameters = Enumerable.Empty<ActionParameter>();
         }
 
-        public string Table { get; set; }
+        public TableInfo Table { get; set; }
 
         public string Command { get; set; }
 
@@ -25,6 +25,8 @@ namespace DatasetRefactor.Metadata
         public string Suffix { get; set; }
 
         public string ReturnType { get; set; }
+
+        public bool IsProcedure { get; set; }
 
         public IEnumerable<ActionParameter> Parameters { get; set; }
     }

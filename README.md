@@ -11,30 +11,30 @@ It uses the power of [HashScript](https://github.com/wwdenis/HashScript) for tem
 ## Command Syntax
 
 ```
-DatasetRefactor source=[assembly] target=[directory] templates=[directory] save=[0/1] filter=[filterFile]
+DatasetRefactor assemblyFile=[assembly] outputRoot=[directory] templateRoot=[directory] saveData=[0/1] filterFile=[file] rootNamespace=[namespace]
 ```
 
 ## Command Arguments
 
 | Argument | Description |
 | -- | --------- |
-| **source** | The source .NET Assembly |
-| **target** | The destination directory for the generated code |
-| **templates** | The directory containing custom `HashScript` templates |
-| **save** | When set to `1` saves the DataSet structure in `JSON` format |
-| **filter** | When set to a existing DataSet, generates only the code related to it |
+| **assemblyFile** | The source .NET Assembly |
+| **outputRoot** | The destination directory for the generated code |
+| **templateRoot** | The directory containing custom `HashScript` templates |
+| **saveData** | When set to `1` saves the DataSet structure in `JSON` format |
+| **filterFile** | A comma-separated file containing a list of TableAdapters/Methods to be generated |
+| **rootNamespace** | Overrides the source .NET Assembly Root Namespace on the refactored code |
 
 ## Example
 
 Scans the assembly `AdventureWorkds.dll` and saves the generated code to `C:\Target` using the default `HashScript` templates
 
 ```
-DatasetRefactor source=C:\Source\AdventureWorkds.dll target=C:\Target
+DatasetRefactor assemblyFile=C:\Source\AdventureWorkds.dll outputRoot=C:\Target
 ```
 
-Scans the assembly `AdventureWorkds.dll` and saves the generated code `C:\Target` using custom `HashScript` templates
-Filters only the Dataset `HumanResourcesDataset`
+Scans the assembly `AdventureWorkds.dll` and saves the generated code `C:\Target` using custom `HashScript` templates, and custom filter and namespace
 
 ```
-DatasetRefactor source=C:\Source\AdventureWorkds.dll target=C:\Target templates=C:\Templates save=1 filter=HumanResourcesDataset
+DatasetRefactor assemblyFile=C:\Source\AdventureWorkds.dll outputRoot=C:\Target templateRoot=C:\Templates saveData=1 filterFile=MyFilter.txt rootNamespace=MyCustomNamespace
 ```

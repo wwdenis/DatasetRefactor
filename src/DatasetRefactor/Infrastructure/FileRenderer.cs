@@ -59,13 +59,21 @@ namespace DatasetRefactor.Infrastructure
 
         private static TransformFile RenderDataFile(ScanInfo info, TemplateFile template)
         {
-            var adapter = info.Adapter.Name;
+            var adapter = info.Adapter;
+            var table = info.Table;
+
+            var tempateName = template.Name;
+            if (!tempateName.Contains("_"))
+            {
+                tempateName = "_" + tempateName;
+            }
+
             var targetDir = info.Dataset.Name;
-            var targetPrefix = info.Table?.Name ?? info.Adapter.Name;
-            var targetName = targetPrefix + template.Name;
+            var baseName = table?.Name ?? adapter.Name;
+            var targetName = tempateName.Replace("_", baseName);
             var targetFile = Path.ChangeExtension(targetName, "cs");
 
-            return RenderFile(info, adapter, template.Contents, targetFile, targetDir);
+            return RenderFile(info, adapter.Name, template.Contents, targetFile, targetDir);
         }
 
         private static TransformFile RenderFile(object source, string name, string template, string targetFile, string targetDir)

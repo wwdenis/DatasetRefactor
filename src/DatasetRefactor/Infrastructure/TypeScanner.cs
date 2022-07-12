@@ -39,24 +39,13 @@ namespace DatasetRefactor.Infrastructure
             
             foreach (var adapter in this.adapters)
             {
-                ScanFilter filter = null;
-
-                if (filters?.Any() ?? false)
-                {
-                    filter = filters.FirstOrDefault(i => string.Equals(i.AdapterName, adapter.Name, StringComparison.OrdinalIgnoreCase));
-                    if (filter is null)
-                    {
-                        continue;
-                    }
-                }
-
-                var success = TryParse(adapter, filter, out var metadata, out var error);
+                var success = TryParse(adapter, filters, out var metadata, out var error);
 
                 if (success)
                 {
                     list.Add(metadata);
                 }
-                else
+                else if (!string.IsNullOrWhiteSpace(error))
                 {
                     errors.Add(error);
                 }
@@ -69,7 +58,7 @@ namespace DatasetRefactor.Infrastructure
             };
         }
 
-        private bool TryParse(Type adapterType, ScanFilter filter, out TypeMetadata metadata, out string error)
+        private bool TryParse(Type adapterType, IEnumerable<ScanFilter> filters, out TypeMetadata metadata, out string error)
         {
             metadata = null;
             error = string.Empty;
@@ -82,12 +71,27 @@ namespace DatasetRefactor.Infrastructure
                 return false;
             }
 
-            var root = match.Groups["Namespace"].Value;
-            var dataset = match.Groups["Dataset"].Value;
-            var table = match.Groups["Table"].Value;
+            var adapterName = adapterType.Name;
+            var rootFragment = match.Groups["Namespace"].Value;
+            var datasetFragment = match.Groups["Dataset"].Value;
+            var tableFragment = match.Groups["Table"].Value;
+            var selectedActions = Enumerable.Empty<string>();
 
-            var datasetName = string.Join(".", root, dataset);
-            var tableName = string.Join(string.Empty, table, "DataTable");
+            if (filters.Any())
+            {
+                var filter = filters.FirstOrDefault(i => string.Equals(i.DatasetName, datasetFragment, StringComparison.OrdinalIgnoreCase) && string.Equals(i.AdapterName, adapterName, StringComparison.OrdinalIgnoreCase));
+                if (filter is null)
+                {
+                    return false;
+                }
+                else
+                {
+                    selectedActions = filter.Actions;
+                }
+            }
+
+            var datasetName = string.Join(".", rootFragment, datasetFragment);
+            var tableName = string.Join(string.Empty, tableFragment, "DataTable");
 
             var datasetType = this.datasets.SingleOrDefault(i => i.FullName == datasetName);
             var tableType = datasetType?.GetNestedTypes().SingleOrDefault(i => i.Name == tableName && this.tables.Contains(i));
@@ -97,10 +101,10 @@ namespace DatasetRefactor.Infrastructure
                 AdapterType = adapterType,
                 DatasetType = datasetType,
                 TableType = tableType,
-                AdapterName = adapterType.Name,
+                AdapterName = adapterName,
                 DatasetName = datasetName,
                 TableName = tableName,
-                SelectedActions = filter?.Actions,
+                SelectedActions = selectedActions,
             };
 
             return true;

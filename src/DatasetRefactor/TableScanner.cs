@@ -21,10 +21,12 @@ namespace DatasetRefactor
             this.assembly = assembly;
         }
 
-        public ScanResult Scan(IEnumerable<ScanFilter> filter = null)
+        public ScanResult Scan(IEnumerable<ScanFilter> filters = null, string rootNamespace = null)
         {
+            filters ??= Enumerable.Empty<ScanFilter>();
+
             var scanner = new TypeScanner(this.assembly);
-            var scan = scanner.Scan(filter);
+            var scan = scanner.Scan(filters);
             var result = new List<ScanInfo>();
 
             foreach (var item in scan.Items)
@@ -32,7 +34,7 @@ namespace DatasetRefactor
                 this.OnProgress(item);
 
                 var adapterInfo = BuildAdapter(item);
-                var tableInfo = BuildTable(item);
+                var tableInfo = BuildTable(item, addActions: true);
                 var datasetInfo = new DatasetInfo(item.DatasetType);
 
                 var info = new ScanInfo
@@ -44,23 +46,26 @@ namespace DatasetRefactor
 
                 result.Add(info);
             }
-            
-            var mainNamescace = result
-                .Select(i => i.Dataset.Namespace)
-                .GroupBy(i => i)
-                .OrderBy(g => g.Count())
-                .Last()
-                .First();
+
+            if (string.IsNullOrWhiteSpace(rootNamespace))
+            {
+                rootNamespace = result
+                    .Select(i => i.Dataset.Namespace)
+                    .GroupBy(i => i)
+                    .OrderBy(g => g.Count())
+                    .Last()
+                    .First();
+            }
 
             return new ScanResult
             {
-                Root = new RootInfo(mainNamescace),
+                Root = new RootInfo(rootNamespace),
                 Items = result,
                 Errors = scan.Errors,
             };
         }
 
-        private static TableInfo BuildTable(TypeMetadata meta)
+        private static TableInfo BuildTable(TypeMetadata meta, bool addActions)
         {
             var type = meta.TableType;
             if (type is null)
@@ -74,17 +79,25 @@ namespace DatasetRefactor
 
             var columns = BuildColumns(type);
             var actions = new List<ActionInfo>();
-            var methods = type
-                .GetDeclaredMethods()
-                .Where(i => i.ReturnType.Name.Equals(rowName));
 
-            foreach (var method in methods)
+            if (addActions)
             {
-                var action = BuildAction(method);
-                if (action?.Type == ActionType.Find)
+                var methods = type
+                    .GetDeclaredMethods()
+                    .Where(i => i.ReturnType.Name.Equals(rowName));
+
+                foreach (var method in methods)
                 {
-                    action.Table = tableName;
-                    actions.Add(action);
+                    var action = BuildAction(method);
+                    if (action?.Type == ActionType.Find)
+                    {
+                        action.Table = new TableInfo
+                        {
+                            Name = tableName,
+                            Namespace = datasetNamespace,
+                        };
+                        actions.Add(action);
+                    }
                 }
             }
 
@@ -113,8 +126,9 @@ namespace DatasetRefactor
                 {
                     Name = col.ColumnName,
                     Type = col.DataType.GetCsName(),
-                    Property = propertyName,
+                    Caption = propertyName,
                     IsKey = keyColumns.Contains(col),
+                    IsNull = !col.DataType.IsClass,
                 };
 
                 columns.Add(column);
@@ -146,14 +160,25 @@ namespace DatasetRefactor
                 var action = BuildAction(method, manager);
                 var command = BuildCommand(method, manager, action);
 
+                action.Table = BuildTable(meta, addActions: false);
+                action.IsProcedure = IsProcedure(command);
+
                 actions.Add(action);
                 commands.Add(command);
             }
+
+            var actionTable = actions.Select(i => i.Table).FirstOrDefault(i => i is not null);
+            var adapterTable = new TableInfo
+            {
+                Name = actionTable?.Name ?? type.Name.Replace("TableAdapter", ""),
+                Namespace = actionTable?.Namespace,
+            };
 
             return new AdapterInfo
             {
                 Name = type.Name,
                 Namespace = type.Namespace,
+                Table = adapterTable,
                 Scalar = actions.Where(i => i.Type == ActionType.Execute),
                 Select = actions.Where(i => i.Type == ActionType.Select),
                 Insert = actions.FirstOrDefault(i => i.Type == ActionType.Insert),
@@ -166,7 +191,6 @@ namespace DatasetRefactor
         private static ActionInfo BuildAction(MethodInfo method, SqlManager manager = null)
         {
             var isSelect = manager?.Adapter?.SelectCommand != null;
-            var tableName = manager?.TableName;
             var actionName = method.Name;
             var actionType = ActionType.None;
 
@@ -198,7 +222,6 @@ namespace DatasetRefactor
                 Prefix = prefix,
                 Suffix = suffix,
                 Name = actionName,
-                Table = tableName,
                 Command = BuildCommandName(actionType, actionName),
                 ReturnType = method.ReturnType.GetCsName(),
                 Parameters = method.GetParameters().Select(i => new ActionParameter(i)),
@@ -260,6 +283,12 @@ namespace DatasetRefactor
                     break;
                 }
             }
+        }
+
+        private static bool IsProcedure(CommandInfo command)
+        {
+            var sqlFragments = new[] { "SELECT ", "INSERT ", "DELETE ", "UPDATE " };
+            return !sqlFragments.Any(i => command.Text.Contains(i));
         }
 
         private void OnProgress(TypeMetadata metadata)

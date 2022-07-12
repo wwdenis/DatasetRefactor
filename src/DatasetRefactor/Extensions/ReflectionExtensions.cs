@@ -54,7 +54,7 @@ namespace DatasetRefactor.Extensions
 
             if (name.Equals(originalName))
             {
-                return valueType.Name;
+                name = valueType.Name;
             }
 
             if (isNullable)
