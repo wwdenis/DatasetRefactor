@@ -134,10 +134,10 @@ namespace DatasetRefactor.Tests.Infrastructure
                 { "Dataset", datasetName },
                 { "Table", tableName },
                 { "PrimaryKey", keyColumn },
-                { "Select", $"Command: Select" },
-                { "Insert", $"Command: Insert" },
-                { "Delete", $"Command: Delete" },
-                { "Update", $"Command: Update" },
+                { "Select", $"SELECT FROM **" },
+                { "Insert", $"INSERT INTO **" },
+                { "Delete", $"DELETE FROM **" },
+                { "Update", $"UPDATE **" },
                 {  "Columns", columnInfo },
             };
         }
@@ -146,12 +146,14 @@ namespace DatasetRefactor.Tests.Infrastructure
         {
             var columnInfo = from i in columns
                              let propertyName = i.Key.Contains(" ") ? i.Key.Replace(" ", "_") : ""
+                             let isKey = i.Key == keyColumn
                              select new ColumnInfo
                              {
                                  Name = i.Key,
                                  Type = i.Value,
-                                 Property = propertyName,
-                                 IsKey = i.Key == keyColumn,
+                                 Caption = propertyName,
+                                 IsKey = isKey,
+                                 IsNull = isKey,
                              };
 
             var insertParameters = from i in columns
@@ -180,56 +182,89 @@ namespace DatasetRefactor.Tests.Infrastructure
                 ReturnType = $"{tableName}Row",
                 Prefix = "Find",
                 Suffix = $"By{keyColumn}",
-                Table = tableName,
                 Command = "FindById",
                 Type = ActionType.Find,
                 Parameters = findParameters,
+                Table = new TableInfo
+                {
+                    Namespace = $"{this.rootNamespace}.{this.datasetName}",
+                    Name = tableName,
+                },
             };
 
-            var commandList = new[]
+            var commandList = new Dictionary<ActionType, string>
             {
-                ActionType.Select,
-                ActionType.Insert,
-                ActionType.Delete,
-                ActionType.Update,
+                { ActionType.Select, "SELECT FROM **" },
+                { ActionType.Insert, "INSERT INTO **" },
+                { ActionType.Delete, "DELETE FROM **" },
+                { ActionType.Update, "UPDATE **" },
             };
 
             var adapterCommands = from i in commandList
                                   select new CommandInfo
                                   {
-                                      Type = i,
-                                      Text = $"Command: {i}",
-                                      Name = $"{i}",
+                                      Type = i.Key,
+                                      Text = i.Value,
+                                      Name = $"{i.Key}",
                                   };
+
+            var dataset = new DatasetInfo
+            {
+                Name = this.datasetName,
+                Namespace = this.rootNamespace,
+            };
+            
+            var table = new TableInfo
+            {
+                Name = tableName,
+                Namespace = $"{this.rootNamespace}.{this.datasetName}",
+                Columns = columnInfo,
+                Actions = new[] { findAction },
+            };
+
+            var actions = new[]
+            {
+                BuildAction(ActionType.Insert, "Insert", "", "Insert", "int", tableName, insertParameters),
+                BuildAction(ActionType.Delete, "Delete", "", "Delete", "int", tableName, deleteParameters),
+                BuildAction(ActionType.Update, "Update", "", "Update", "int", tableName, updateParameters),
+                BuildAction(ActionType.Select, "GetData", "GetData", "Select", $"{tableName}DataTable", tableName)
+            };
+
+            foreach (var action in actions)
+            {
+                action.Table = new TableInfo
+                {
+                    Namespace = $"{this.rootNamespace}.{this.datasetName}",
+                    Name = tableName,
+                    Columns = columnInfo,
+                };
+            }
+
+            var adapter = new AdapterInfo
+            {
+                Name = tableName + "TableAdapter",
+                Namespace = string.Join("", this.rootNamespace, ".", this.datasetName, "TableAdapters"),
+                Table = new TableInfo
+                {
+                    Namespace = $"{this.rootNamespace}.{this.datasetName}",
+                    Name = tableName,
+                },
+                Commands = adapterCommands,
+                Insert = actions.Single(i => i.Type == ActionType.Insert),
+                Delete = actions.Single(i => i.Type == ActionType.Delete),
+                Update = actions.Single(i => i.Type == ActionType.Update),
+                Select = new[]
+                {
+                    actions.Single(i => i.Type == ActionType.Select)
+                },
+                Scalar = new ActionInfo[0],
+            };
 
             var info = new ScanInfo
             {
-                Dataset = new DatasetInfo
-                {
-                    Name = this.datasetName,
-                    Namespace = this.rootNamespace,
-                },
-                Table = new TableInfo
-                {
-                    Name = tableName,
-                    Namespace = string.Join(".", this.rootNamespace, this.datasetName),
-                    Columns = columnInfo,
-                    Actions = new[] { findAction },
-                },
-                Adapter = new AdapterInfo
-                {
-                    Name = tableName + "TableAdapter",
-                    Namespace = string.Join("", this.rootNamespace, ".", this.datasetName, "TableAdapters"),
-                    Commands = adapterCommands,
-                    Insert = BuildAction(ActionType.Insert, "Insert", "", "Insert", "int", tableName, insertParameters),
-                    Delete = BuildAction(ActionType.Delete, "Delete", "", "Delete", "int", tableName, deleteParameters),
-                    Update = BuildAction(ActionType.Update, "Update", "", "Update", "int", tableName, updateParameters),
-                    Select = new[]
-                    {
-                        BuildAction(ActionType.Select, "GetData", "GetData", "Select", $"{tableName}DataTable", tableName)
-                    },
-                    Scalar = new ActionInfo[0],
-                }
+                Dataset = dataset,
+                Table = table,
+                Adapter = adapter
             };
 
             return new ScanResult
@@ -240,7 +275,7 @@ namespace DatasetRefactor.Tests.Infrastructure
             };
         }
 
-        static ActionInfo BuildAction(ActionType type, string name, string prefix, string command, string returnType, string tableName, IEnumerable<ActionParameter> parameters = null)
+        private ActionInfo BuildAction(ActionType type, string name, string prefix, string command, string returnType, string tableName, IEnumerable<ActionParameter> parameters = null)
         {
             return new ActionInfo
             {
@@ -250,8 +285,13 @@ namespace DatasetRefactor.Tests.Infrastructure
                 Prefix = prefix,
                 Suffix = "",
                 ReturnType = returnType,
-                Table = tableName,
+                IsProcedure = false,
                 Parameters = parameters ?? Enumerable.Empty<ActionParameter>(),
+                Table = new TableInfo
+                {
+                    Namespace = $"{this.rootNamespace}.{this.datasetName}",
+                    Name = tableName,
+                },
             };
         }
     }

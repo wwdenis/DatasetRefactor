@@ -16,15 +16,15 @@ namespace DatasetRefactor.Infrastructure
 
         public bool IsValid()
         {
-            if (this.Project is null || this.Base is null || this.Adapter is null || this.Table is null)
+            if (this.Project is null && this.Base is null && this.Adapter is null && this.Table is null)
             {
                 return false;
             }
 
             return this.Project.IsValid()
-                && this.Base.All(i => i.IsValid())
-                && this.Adapter.All(i => i.IsValid())
-                && this.Table.All(i => i.IsValid());
+                || this.Base.Any(i => i.IsValid())
+                || this.Adapter.Any(i => i.IsValid())
+                || this.Table.Any(i => i.IsValid());
         }
 
         public static TemplateGroup ReadAll(string templateDir)

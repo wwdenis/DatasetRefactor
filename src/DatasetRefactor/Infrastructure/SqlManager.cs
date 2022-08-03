@@ -45,7 +45,6 @@ namespace DatasetRefactor.Infrastructure
         public static SqlManager Create(Type adapterType)
         {
             var component = Activator.CreateInstance(adapterType) as Component;
-            // component.InvokeDefault("InitAdapter");
             component.InvokeDefault("InitCommandCollection");
 
             var tableName = adapterType.Name.Replace("TableAdapter", string.Empty);
@@ -59,7 +58,7 @@ namespace DatasetRefactor.Infrastructure
         private IEnumerable<IDbCommand> GetAllCommands()
         {
             var selectCommands = this.Commands;
-            var dataCommands = this.Adapter.GetDataCommands();
+            var dataCommands = this.GetDataCommands();
             return selectCommands
                 .Union(dataCommands)
                 .Where(i => i != null);
@@ -81,6 +80,23 @@ namespace DatasetRefactor.Infrastructure
                     param.Value = null;
                 }
             }
+        }
+
+        private IEnumerable<IDbCommand> GetDataCommands()
+        {
+            if (this.Adapter is null)
+            {
+                return Enumerable.Empty<IDbCommand>();
+            }
+
+            var commands = new[]
+            {
+                this.Adapter.UpdateCommand,
+                this.Adapter.InsertCommand,
+                this.Adapter.DeleteCommand,
+            };
+
+            return commands.Where(i => i != null);
         }
     }
 }

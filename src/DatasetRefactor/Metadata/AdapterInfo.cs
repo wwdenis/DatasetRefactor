@@ -15,6 +15,8 @@ namespace DatasetRefactor.Metadata
 
         public string Namespace { get; set; }
 
+        public TableInfo Table { get; set; }
+
         public IEnumerable<CommandInfo> Commands { get; set; }
         
         public IEnumerable<ActionInfo> Scalar { get; set; }

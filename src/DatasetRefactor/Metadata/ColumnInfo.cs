@@ -6,8 +6,10 @@
 
         public string Type { get; set; }
 
-        public string Property { get; set; }
+        public string Caption { get; set; }
 
         public bool IsKey { get; set; }
+
+        public bool IsNull { get; set; }
     }
 }
