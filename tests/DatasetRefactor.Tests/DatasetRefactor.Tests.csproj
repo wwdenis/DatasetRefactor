@@ -23,10 +23,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="HashScript" Version="0.0.2" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\src\DatasetRefactor\DatasetRefactor.csproj" />
   </ItemGroup>
 
